@@ -9,9 +9,10 @@
 //     *.myshopify.com hosts are password-protected and answer 401 honestly).
 //   - PAGINATION: page walk, cap 3 pages (750 products) — `truncated` says so
 //     honestly when the cap stopped a full walk.
-//   - CURRENCY: the public catalog payload carries no currency; the storefront's
-//     public /cart.js does (verified live: {"currency":"USD"}) — one best-effort
-//     read per search, honest null on any failure.
+//   - CURRENCY: shop.currency when the catalog payload carries one (the
+//     plain public products.json payload doesn't); else the storefront's
+//     public /cart.js does (verified live: {"currency":"USD"}) — one
+//     best-effort read per search, honest null on any failure.
 //   - There is no server-side text filter on the public endpoint — filtering is
 //     client-side over title/tags/product_type/vendor (all-token match preferred,
 //     any-token match as the fallback so "yeezy shoes" finds Yeezys even when
@@ -241,6 +242,7 @@ export const shopifyConnector: StoreConnector = {
     // Currency read overlaps the page walk (best-effort; null on any failure).
     const currencyPromise = shopifyFetch(`https://${host}/cart.js`);
     const collected: Record<string, unknown>[] = [];
+    let payloadCurrency: string | null = null;
     let walkCapped = false;
 
     for (let page = 1; page <= PAGE_CAP; page += 1) {
@@ -250,6 +252,13 @@ export const shopifyConnector: StoreConnector = {
       if (!res.ok) {
         // The currency probe is irrelevant when the catalog itself failed.
         return res.error;
+      }
+      // shop.currency when the payload carries one (defensive — the plain
+      // public catalog payload doesn't; /cart.js below is the usual source).
+      const shop = res.json.shop;
+      if (typeof shop === "object" && shop !== null) {
+        const cur = (shop as Record<string, unknown>).currency;
+        if (typeof cur === "string" && cur.length > 0) payloadCurrency = cur;
       }
       const products = Array.isArray(res.json.products) ? res.json.products : [];
       const rows = products.filter(
@@ -262,9 +271,10 @@ export const shopifyConnector: StoreConnector = {
 
     const currencyRes = await currencyPromise;
     const currency =
-      currencyRes.ok && typeof currencyRes.json.currency === "string"
+      payloadCurrency ??
+      (currencyRes.ok && typeof currencyRes.json.currency === "string"
         ? currencyRes.json.currency
-        : null;
+        : null);
 
     const scoredMap = new Map<StoreFinding, number>();
     const findings: StoreFinding[] = [];
@@ -288,8 +298,8 @@ export const shopifyConnector: StoreConnector = {
 // ——— platform discovery (shared with the connector registry) ———
 
 /**
- * Does this host serve a public Shopify catalog? (discoverPlatformForUrl's
- * Shopify probe — one cheapest-possible page read.)
+ * Does this host serve a public Shopify catalog? (urlToPlatform's Shopify
+ * probe — one cheapest-possible page read.)
  */
 export async function probeShopifyCatalog(host: string): Promise<true | StoreSearchError> {
   const normalized = normalizeStorefrontDomain(host);

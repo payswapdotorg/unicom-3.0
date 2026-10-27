@@ -227,8 +227,8 @@ export const wooConnector: StoreConnector = {
 // ——— platform discovery (shared with the connector registry) ———
 
 /**
- * Does this origin serve the public Woo REST catalog? (discoverPlatformForUrl's
- * Woo probe — one cheapest-possible page read; X-WP-Total proves the endpoint.)
+ * Does this origin serve the public Woo REST catalog? (urlToPlatform's Woo
+ * probe — one cheapest-possible page read; X-WP-Total proves the endpoint.)
  */
 export async function probeWooCatalog(origin: string): Promise<true | StoreSearchError> {
   const normalized = normalizeWooOrigin(origin);

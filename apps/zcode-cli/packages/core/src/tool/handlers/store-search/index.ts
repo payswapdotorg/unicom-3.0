@@ -65,15 +65,18 @@ export type PlatformDiscoveryResult =
   | { platform: null; error: StoreSearchError };
 
 /**
- * Detect which public-catalog platform a user-provided store URL serves
- * (Shopify vs WooCommerce), with the same 10s aborts + error taxonomy as the
- * search connectors. Probes the cheapest public endpoints live:
+ * urlToPlatform — the "connect by URL" sniffing helper for the future
+ * StoresService connect flow: detect which public-catalog platform a
+ * user-provided store URL serves (Shopify vs WooCommerce), with the same 10s
+ * aborts + error taxonomy as the search connectors. Probes the cheapest
+ * public endpoints live (a live probe beats string sniffing — custom domains
+ * carry no platform hint):
  *   - Shopify: {host}/products.json?limit=1 (200 + products array)
  *   - Woo:     {origin}/wp-json/wc/v3/products?per_page=1 (200 + array)
  * A network-level failure (unreachable/timeout) fails fast; a locked or
  * missing catalog returns the more informative of the two classifications.
  */
-export async function discoverPlatformForUrl(url: string): Promise<PlatformDiscoveryResult> {
+export async function urlToPlatform(url: string): Promise<PlatformDiscoveryResult> {
   const host = normalizeStorefrontDomain(url);
   if (host.length === 0) {
     return { platform: null, error: { code: "platform_error", message: "The URL has no usable host." } };

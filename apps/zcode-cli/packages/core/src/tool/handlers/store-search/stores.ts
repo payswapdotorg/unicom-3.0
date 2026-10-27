@@ -42,12 +42,21 @@ export interface ConnectedStoresState {
   readError?: string;
 }
 
-/** Candidate state files, in priority order (the writer owns the canonical one). */
+/**
+ * Candidate state files, in priority order.
+ *
+ * CANONICAL (the P4 StoresService writer contract): {base}/.zcode/stores.json
+ * holding { "stores": StoreRecord[] } (a bare top-level array is also read
+ * defensively). {base} is $ZCODE_DATA_BASE_DIR/.zcode when the desktop sets
+ * it (README "configurable data directory"), else ~/.zcode.
+ * The v2 sibling is a defensive fallback only (the credential vault lives
+ * under .zcode/v2 — a writer landing there is still read, first-wins).
+ */
 export function connectedStoresFilePaths(homeDir?: string): string[] {
-  const base = process.env.ZCODE_DATA_BASE_DIR?.trim() || homeDir || homedir();
+  const base = homeDir?.trim() || process.env.ZCODE_DATA_BASE_DIR?.trim() || homedir();
   return [
-    join(base, ".zcode", "v2", "stores.json"),
     join(base, ".zcode", "stores.json"),
+    join(base, ".zcode", "v2", "stores.json"),
   ];
 }
 

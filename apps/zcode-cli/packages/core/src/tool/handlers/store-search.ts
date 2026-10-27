@@ -11,7 +11,7 @@
 // StoresService owns the writes).
 
 import { z } from "zod";
-import type { ToolEntry, ToolHandler } from "../types.js";
+import type { ToolEntry, ToolHandler, ToolHandlerFailure } from "../types.js";
 import {
   connectorFor,
   isSearchableStore,
@@ -21,6 +21,7 @@ import {
   type StoreFinding,
   type StoreRecord,
   type StoreSearchError,
+  type SupportedStorePlatform,
 } from "./store-search/index.js";
 
 const STORE_SEARCH_TOOL_NAME = "store_search";
@@ -30,17 +31,17 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_OUTPUT_BYTES = 20_000;
 
 const STORE_SEARCH_DESCRIPTION = [
-  "Search product catalogs across the user's connected stores (Shopify, WooCommerce, Etsy). Returns findings with product page links that can be opened in the integrated browser.",
+  "Search product catalogs across the user's connected stores (Shopify, WooCommerce, Etsy). Returns normalized findings with product page links that can be opened in the integrated browser. Supports newest-first and price sorting.",
   "",
   "- Use it whenever the user asks to find products/sneakers/merch in their connected stores; all connected stores are searched in parallel, newest first by default.",
-  "- `platforms` limits the fan-out (e.g. [\"shopify\", \"woo\"]); default: all connected stores.",
+  "- `platforms` limits the fan-out (e.g. [\"shopify\", \"woo\"]); default: all connected stores. Unknown platform names are rejected with the list of known platforms.",
   "- Per-store failures never fail the call — check `per_store` for each store's honest status (e.g. invalid_credentials, rate_limited, not_configured).",
   "- When no store is connected, the result says so — suggest Settings -> Connected Stores, or use WebSearch instead.",
   "- Platforms without a store API (e.g. Whatnot) are never faked: the notice says they are searched via the web instead — use WebSearch for those.",
 ].join("\n");
 
 const ZERO_STORES_NOTICE =
-  "No stores are connected yet — open Settings → Connected Stores to add a store, or ask me to search the web instead.";
+  "No stores are connected yet — open Settings → Connected Stores to add one, or ask me to search the web instead.";
 
 // ——— input contract ———
 
@@ -60,11 +61,10 @@ const StoreSearchInputSchema = z
       ),
     max_per_store: z
       .number()
-      .int()
-      .min(1)
-      .max(HARD_MAX_PER_STORE)
       .default(DEFAULT_MAX_PER_STORE)
-      .describe(`Maximum findings per store (default ${DEFAULT_MAX_PER_STORE}, max ${HARD_MAX_PER_STORE})`),
+      .describe(
+        `Maximum findings per store (default ${DEFAULT_MAX_PER_STORE}, clamped into 1..${HARD_MAX_PER_STORE})`,
+      ),
     sort: z
       .enum(["newest", "relevance", "price_asc", "price_desc"])
       .default("newest")
@@ -165,14 +165,25 @@ const StoreSearchOutputJsonSchema = z.toJSONSchema(StoreSearchOutputSchema);
 
 // ——— per-store fan-out ———
 
+/** What one store's connector run needs (the clamped, validated input). */
+interface FanOutParams {
+  query: string;
+  max_per_store: number;
+  sort: StoreSearchInput["sort"];
+}
+
+/** Clamp the model-provided per-store cap into 1..25 — a forgiving clamp, not
+ * a hard rejection (an out-of-range value still yields a sane, honest search). */
+function clampMaxPerStore(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_MAX_PER_STORE;
+  return Math.min(HARD_MAX_PER_STORE, Math.max(1, Math.round(value)));
+}
+
 type PerStoreOutcome =
   | { kind: "ok"; record: StoreRecord; findings: StoreFinding[]; truncated: boolean }
   | { kind: "error"; record: StoreRecord; error: StoreSearchError };
 
-async function searchStore(
-  record: StoreRecord,
-  params: Omit<StoreSearchInput, "platforms">,
-): Promise<PerStoreOutcome> {
+async function searchStore(record: StoreRecord, params: FanOutParams): Promise<PerStoreOutcome> {
   const connector = connectorFor(record.platform);
   if (connector === null) {
     return {
@@ -216,17 +227,16 @@ function displayPlatform(record: StoreRecord): string {
   return normalizeStorePlatform(record.platform) ?? record.platform;
 }
 
+/** Does this record match the (already canonicalized, pre-validated) filter?
+ * Records on unknown platforms never match a filter — the filter only holds
+ * known connector platforms. */
 function matchesPlatformFilter(
   record: StoreRecord,
-  filter: readonly string[] | null,
+  filter: ReadonlySet<SupportedStorePlatform> | null,
 ): boolean {
   if (filter === null) return true;
   const canonical = normalizeStorePlatform(record.platform);
-  return filter.some(
-    (entry) =>
-      entry.toLowerCase() === record.platform.trim().toLowerCase() ||
-      (canonical !== null && entry.toLowerCase() === canonical),
-  );
+  return canonical !== null && filter.has(canonical);
 }
 
 function timestampOf(finding: StoreFinding): number {
@@ -253,26 +263,58 @@ function sortMergedFindings(findings: StoreFinding[], sort: StoreSearchInput["so
 
 // ——— the handler ———
 
-const storeSearchHandler: ToolHandler<StoreSearchInput, StoreSearchOutput> = async (input, context) => {
-  context.abortSignal?.throwIfAborted();
+const storeSearchHandler: ToolHandler<
+  StoreSearchInput,
+  StoreSearchOutput | ToolHandlerFailure
+> = async (input, context) => {
+  context.abortSignal.throwIfAborted();
   const startedAt = Date.now();
   const parsed = StoreSearchInputSchema.parse(input);
+
+  // Platform filter — validated against the KNOWN connector platforms first:
+  // an unknown platform is a helpful 400-style tool error (the model learns
+  // the valid names), never a silently-empty "search".
+  let platformFilter: Set<SupportedStorePlatform> | null = null;
+  if (parsed.platforms !== undefined) {
+    const unknown: string[] = [];
+    platformFilter = new Set<SupportedStorePlatform>();
+    for (const entry of parsed.platforms) {
+      const canonical = normalizeStorePlatform(entry);
+      if (canonical === null) {
+        unknown.push(entry);
+      } else {
+        platformFilter.add(canonical);
+      }
+    }
+    if (unknown.length > 0) {
+      return {
+        result: false,
+        errorCode: 400,
+        message: `store_search: unknown platform(s) ${unknown
+          .map((platform) => `"${platform}"`)
+          .join(", ")} — the known platforms are shopify, woocommerce (alias "woo") and etsy. Platforms without a store API (e.g. whatnot) are never faked: search the web for those with WebSearch instead.`,
+      };
+    }
+  }
+
+  const fanOut: FanOutParams = {
+    query: parsed.query,
+    max_per_store: clampMaxPerStore(parsed.max_per_store),
+    sort: parsed.sort,
+  };
+
   const state = await readConnectedStores();
   const notices: string[] = [];
   if (state.readError !== undefined) notices.push(state.readError);
-
-  const platformFilter =
-    parsed.platforms?.map((entry) => entry.trim()).filter((entry) => entry.length > 0) ?? null;
-  const effectiveFilter = platformFilter !== null && platformFilter.length === 0 ? null : platformFilter;
 
   const allStores = state.stores;
   // Delegated-web stores (tier "web", e.g. Whatnot) are never fetched — they
   // surface honestly in the notice as "searched via web" guidance.
   const webStores = allStores.filter(
-    (record) => record.tier === "web" && matchesPlatformFilter(record, effectiveFilter),
+    (record) => record.tier === "web" && matchesPlatformFilter(record, platformFilter),
   );
   const searchable = allStores.filter(
-    (record) => isSearchableStore(record) && matchesPlatformFilter(record, effectiveFilter),
+    (record) => isSearchableStore(record) && matchesPlatformFilter(record, platformFilter),
   );
 
   if (allStores.length === 0) {
@@ -296,7 +338,7 @@ const storeSearchHandler: ToolHandler<StoreSearchInput, StoreSearchOutput> = asy
     const connected = allStores.map((record) => displayPlatform(record));
     notices.push(
       `No connected store was searched for platform(s) ${
-        effectiveFilter !== null ? effectiveFilter.join(", ") : "(all)"
+        parsed.platforms !== undefined ? parsed.platforms.join(", ") : "(all)"
       } — connected platforms: ${[...new Set(connected)].join(", ")}.`,
     );
     return {
@@ -311,7 +353,7 @@ const storeSearchHandler: ToolHandler<StoreSearchInput, StoreSearchOutput> = asy
 
   // Fan out to ALL connected (searchable) stores in parallel; a store's
   // failure never fails the call — it lands in per_store honestly.
-  const outcomes = await Promise.all(searchable.map((record) => searchStore(record, parsed)));
+  const outcomes = await Promise.all(searchable.map((record) => searchStore(record, fanOut)));
 
   const results: StoreFinding[] = [];
   const perStore: StoreSearchOutput["per_store"] = [];
