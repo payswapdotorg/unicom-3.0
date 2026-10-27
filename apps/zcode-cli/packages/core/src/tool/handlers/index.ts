@@ -31,6 +31,7 @@ import { globToolEntry } from "./glob.js";
 import { grepToolEntry } from "./grep.js";
 import { webFetchToolEntry } from "./webfetch.js";
 import { webSearchToolEntry } from "./websearch.js";
+import { storeSearchToolEntry } from "./store-search.js";
 import {
   agentToolEntry,
   createAgentToolEntry,
@@ -89,6 +90,7 @@ export const builtInTools: ToolEntry[] = [
   grepToolEntry,
   webFetchToolEntry,
   webSearchToolEntry,
+  storeSearchToolEntry,
   todoReadToolEntry,
   todoWriteToolEntry,
   cronCreateToolEntry,
