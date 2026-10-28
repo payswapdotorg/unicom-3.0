@@ -48,6 +48,10 @@ import {
   StoreSearchToolCallBlock,
   isStoreSearchToolCall,
 } from "@/ToolCallBlocks/renderers/store-search.js";
+import {
+  CommerceHarnessToolCallBlock,
+  isCommerceHarnessToolCall,
+} from "@/ToolCallBlocks/renderers/commerce-harness.js";
 import { SendMessageToolCallBlock } from "@/ToolCallBlocks/renderers/send-message.js";
 import { SkillToolCallBlock } from "@/ToolCallBlocks/renderers/skill.js";
 import { SubmitResultToolCallBlock } from "@/ToolCallBlocks/renderers/submit-result.js";
@@ -87,6 +91,16 @@ export function resolveToolCallRenderer(context: ToolCallBlockRenderContext) {
   // 成通用搜索卡，丢掉分组商品清单、逐店状态与 notice。按名先判定让两种世界都成立。
   if (isStoreSearchToolCall(toolCall)) {
     return StoreSearchToolCallBlock;
+  }
+
+  // find_best_offer（别名 find_best_deal/shop_intent，commerce harness 五层度量结果）同款
+  // 按名分流、同样排在 family 之前：它不在 shared 的已知工具表里（identity 回 unknown →
+  // raw JSON 兜底卡会把 plan/evaluation/results/opportunities 原样摊开）；而一旦将来被
+  // 登记进某个 family（如 search），那个兜底会画成通用卡片，丢掉约束小签、分组短名单、
+  // 逐店状态与机会候选集（反事实与在售报价的区分是渲染法条）。按名先判定让两种世界
+  // 都成立（store-search 的同款理由）。
+  if (isCommerceHarnessToolCall(toolCall)) {
+    return CommerceHarnessToolCallBlock;
   }
 
   // 可复用工作流的两个工具按**工具名**先分流，刻意排在 family 之前。两个理由：
