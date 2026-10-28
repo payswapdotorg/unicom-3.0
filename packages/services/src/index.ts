@@ -224,6 +224,25 @@ export {
 } from "./memory/memory.js";
 export type { ProjectMemoryFileSummary, ProjectMemoryWorkspaceSummary } from "./memory/memory.js";
 
+// Connected Stores service — IStoresService is both a type (interface) and
+// value (descriptor). The implementation (storesService.ts) is host-side
+// only (node:fs) and is imported from its file directly, same law as
+// createSettingService.
+export { IStoresService } from "./stores/stores.js";
+export type {
+  ConnectStoreInput,
+  ConnectStoreOutcome,
+  RemoveStoreOutcome,
+  StoreAuthority,
+  StoreConnectionErrorCode,
+  StoreConnectionRecord,
+  StoreEtsyCredentials,
+  StoreEvidenceClass,
+  StoreListResult,
+  StoreTier,
+  TestConnectionOutcome,
+} from "./stores/stores.js";
+
 // OutputStyle service — IOutputStyleService is both a type (interface) and value (descriptor).
 export { IOutputStyleService } from "./output-style/outputStyle.js";
 export type { SessionRealtimePort } from "./session/sessionRealtimePort.js";

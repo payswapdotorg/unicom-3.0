@@ -87,6 +87,7 @@ import { PluginsSection } from "@/settings/PluginsSection.js";
 import { HooksSection } from "@/settings/HooksSection.js";
 import { WorkspaceFileSearchSection } from "@/settings/WorkspaceFileSearchSection.js";
 import { MemorySettingsSection } from "@/settings/MemorySettingsSection.js";
+import { ConnectedStoresSection } from "@/settings/ConnectedStoresSection.js";
 import { BrowserSettingsSection } from "@/settings/BrowserSettingsSection.js";
 import { ComputerUseSection } from "@/settings/ComputerUseSection.js";
 import { ShortcutSettingsSection } from "@/settings/ShortcutSettingsSection.js";
@@ -2105,6 +2106,14 @@ export function SettingsPage({
                                 onMemoryEnabledChange={handleMemoryEnabledChange}
                                 projectMemoryViewerAvailable={Boolean(isDesktop)}
                                 workspaceDisplayNames={memoryWorkspaceDisplayNames}
+                              />
+                            </ServiceProvider>
+                          ) : activeSection === "connectedStores" ? (
+                            <ServiceProvider services={localHostServices}>
+                              {/* Connected Stores 属于本机 Host 事实源（~/.zcode/stores.json）；
+                                  远端 workspace 下也读写本机 Host，与 Memory 同法。 */}
+                              <ConnectedStoresSection
+                                storesService={localHostServices.storesService}
                               />
                             </ServiceProvider>
                           ) : activeSection === "plugin" ? (

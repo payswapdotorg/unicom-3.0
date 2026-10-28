@@ -48,6 +48,7 @@ import {
   ICommandsService,
   IHooksService,
   IMemoryService,
+  IStoresService,
   IOutputStyleService,
   ISettingsSyncService,
   IFeedbackService,
@@ -120,6 +121,7 @@ export class RemoteServiceAccess implements IServiceAccessor {
   readonly commandsService: ICommandsService;
   readonly hooksService: IHooksService;
   readonly memoryService: IMemoryService;
+  readonly storesService: IStoresService;
   readonly outputStyleService: IOutputStyleService;
   readonly settingsSyncService: ISettingsSyncService;
   readonly feedbackService: IFeedbackService;
@@ -298,6 +300,9 @@ export class RemoteServiceAccess implements IServiceAccessor {
     );
     this.memoryService = ProxyChannel.toService<IMemoryService>(
       channelClient.getChannel(IMemoryService.channelName),
+    );
+    this.storesService = ProxyChannel.toService<IStoresService>(
+      channelClient.getChannel(IStoresService.channelName),
     );
     this.outputStyleService = ProxyChannel.toService<IOutputStyleService>(
       channelClient.getChannel(IOutputStyleService.channelName),

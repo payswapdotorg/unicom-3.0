@@ -53,6 +53,7 @@ import type { ISourceServerWorkspaceService } from "./source-server-workspace/so
 import type { ISourceServerManagementService } from "./source-server-management/sourceServerManagement.js";
 import type { IOnboardingRecordService } from "./onboarding/onboardingRecord.js";
 import type { IConversationShareService } from "./conversation-share/conversationShare.js";
+import type { IStoresService } from "./stores/stores.js";
 
 /** UI 层消费的统一服务接口 */
 export interface IServiceAccessor {
@@ -121,4 +122,6 @@ export interface IServiceAccessor {
   readonly settingsSyncService: ISettingsSyncService;
   readonly feedbackService: IFeedbackService;
   readonly promptAttachmentTransferService: IPromptAttachmentTransferService;
+  /** Connected Stores 管理（~/.zcode/stores.json writer）；旧 host/测试 double 可不提供。 */
+  readonly storesService?: IStoresService;
 }

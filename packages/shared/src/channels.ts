@@ -170,6 +170,8 @@ export const ServiceChannels = {
   Hooks: "hooks",
   /** Memory 管理服务 */
   Memory: "memory",
+  /** Connected Stores 管理服务（~/.zcode/stores.json 的唯一 writer；store_search 工具只读） */
+  Stores: "stores",
   /** OutputStyle 管理服务 */
   OutputStyle: "output-style",
   /** 首次启动设置同步服务 */
