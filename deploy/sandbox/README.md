@@ -17,3 +17,22 @@ except `/home/z/my-project`. Keep both copies in sync.
 
 Renderer edits hot-reload through the vite dev server straight into the streamed view —
 that is the "watch the changes land" loop for this deployment.
+
+## 2026-10-28 update — the operator live view runs the WEB stack (boot-web.sh)
+
+The Electron-under-Xvfb path (`boot-desktop.sh` + `viewer.mjs`) boots electron main
+but **chromium's `ready` never fires in this sandbox**: main thread parked in
+`epoll_pwait` with only stdio pipe handles (`process.getActiveResourcesInfo()`),
+no `--type=renderer` process, the `app.commandLine` remote-debugging switch never
+applied (no :9229), app log stops right after `[arms] electron initialized`, and
+disabling hardware acceleration via `~/.zcode/v2/setting.json`
+(`desktopChromiumHardwareAccelerationEnabled: false`) did not unblock it.
+The blocker is upstream in chromium's C++ startup for this environment — open,
+documented, and NOT a product bug.
+
+**`boot-web.sh` is the operator's live view**: `@zcode/server` (tsup watch, :3030)
++ `@zcode/web` vite (`0.0.0.0:3000`). Same renderer, same `packages/ui` HMR —
+every lane edit lands live in the preview panel, and the view is interactive.
+The packaged-desktop acceptance item (operator review §7) remains open until the
+chromium ready-hang is resolved (candidate next step: compare the older
+electron that boots fine in the sibling UniCom repo).
