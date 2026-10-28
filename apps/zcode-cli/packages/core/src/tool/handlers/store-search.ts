@@ -391,54 +391,6 @@ const storeSearchHandler: ToolHandler<
   };
 };
 
-// ——— model-visible content ———
-
-function formatFindingLine(finding: StoreFinding): string {
-  const price =
-    finding.price !== null
-      ? `${finding.price.toFixed(2)}${finding.currency !== null ? ` ${finding.currency}` : ""}`
-      : "price unknown";
-  const published =
-    finding.published_at !== null ? ` — published ${finding.published_at.slice(0, 10)}` : "";
-  const truncated = finding.truncated === true ? " (result may be truncated)" : "";
-  return `- [${finding.title}](${finding.url}) — ${price} — ${finding.store} (${finding.platform})${published}${truncated}`;
-}
-
-function formatStoreSearchModelContent(output: unknown): string {
-  const parsed = StoreSearchOutputSchema.safeParse(output);
-  if (!parsed.success) {
-    return typeof output === "string" ? output : (JSON.stringify(output) ?? "");
-  }
-  const data = parsed.data;
-  const lines = [`Store search results for query: "${data.query}"`, ""];
-
-  if (data.results.length > 0) {
-    for (const finding of data.results) lines.push(formatFindingLine(finding));
-  } else {
-    lines.push("No findings.");
-  }
-
-  if (data.per_store.length > 0) {
-    lines.push("", "Per-store status:");
-    for (const entry of data.per_store) {
-      if (entry.status === "ok") {
-        lines.push(
-          `- ${entry.store} (${entry.platform}): ok — ${entry.count} finding${
-            entry.count === 1 ? "" : "s"
-          }${entry.truncated === true ? " (store scan truncated)" : ""}`,
-        );
-      } else {
-        lines.push(`- ${entry.store} (${entry.platform}): ${entry.status} — ${entry.message}`);
-      }
-    }
-  }
-
-  if (data.notice !== undefined) {
-    lines.push("", `Notice: ${data.notice}`);
-  }
-  return lines.join("\n").trim();
-}
-
 // ——— the tool entry (wired in handlers/index.ts) ———
 
 export const storeSearchToolEntry: ToolEntry = {
@@ -460,7 +412,6 @@ export const storeSearchToolEntry: ToolEntry = {
   },
   aliases: ["search_stores", "store_find"],
   handler: storeSearchHandler as ToolHandler,
-  formatModelContent: formatStoreSearchModelContent,
   inputSchema: StoreSearchInputJsonSchema,
   outputSchema: StoreSearchOutputJsonSchema,
   runtimeInputSchema: StoreSearchInputSchema,
