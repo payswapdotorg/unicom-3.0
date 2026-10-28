@@ -44,6 +44,10 @@ import { ReadSessionContextToolCallBlock } from "@/ToolCallBlocks/renderers/read
 import { RespondToCoordinatorToolCallBlock } from "@/ToolCallBlocks/renderers/respond-to-coordinator.js";
 import { WebFetchToolCallBlock } from "@/ToolCallBlocks/renderers/web-fetch.js";
 import { SearchToolCallBlock, ToolSearchToolCallBlock } from "@/ToolCallBlocks/renderers/search.js";
+import {
+  StoreSearchToolCallBlock,
+  isStoreSearchToolCall,
+} from "@/ToolCallBlocks/renderers/store-search.js";
 import { SendMessageToolCallBlock } from "@/ToolCallBlocks/renderers/send-message.js";
 import { SkillToolCallBlock } from "@/ToolCallBlocks/renderers/skill.js";
 import { SubmitResultToolCallBlock } from "@/ToolCallBlocks/renderers/submit-result.js";
@@ -75,6 +79,14 @@ export function resolveToolCallRenderer(context: ToolCallBlockRenderContext) {
   const toolCall = context.toolCallNode.toolCall;
   if ((toolCall.toolName ?? toolCall.kind) === "ToolSearch") {
     return ToolSearchToolCallBlock;
+  }
+
+  // 跨店商品搜索（store_search + 别名 search_stores/store_find）同款按名分流、同样排在
+  // family 之前：它不在 shared 的已知工具表里（identity 回 unknown → raw JSON 兜底卡会把
+  // findings/per_store/notice 原样摊开）；而一旦将来被登记进 search family，那个兜底会画
+  // 成通用搜索卡，丢掉分组商品清单、逐店状态与 notice。按名先判定让两种世界都成立。
+  if (isStoreSearchToolCall(toolCall)) {
+    return StoreSearchToolCallBlock;
   }
 
   // 可复用工作流的两个工具按**工具名**先分流，刻意排在 family 之前。两个理由：
