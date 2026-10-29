@@ -33,6 +33,7 @@ import { webFetchToolEntry } from "./webfetch.js";
 import { webSearchToolEntry } from "./websearch.js";
 import { storeSearchToolEntry } from "./store-search.js";
 import { findBestOfferToolEntry } from "./find-best-offer.js";
+import { merchantReadToolEntry } from "./merchant-read.js";
 import {
   agentToolEntry,
   createAgentToolEntry,
@@ -93,6 +94,7 @@ export const builtInTools: ToolEntry[] = [
   webSearchToolEntry,
   storeSearchToolEntry,
   findBestOfferToolEntry,
+  merchantReadToolEntry,
   todoReadToolEntry,
   todoWriteToolEntry,
   cronCreateToolEntry,

@@ -52,6 +52,10 @@ import {
   CommerceHarnessToolCallBlock,
   isCommerceHarnessToolCall,
 } from "@/ToolCallBlocks/renderers/commerce-harness.js";
+import {
+  MerchantReadToolCallBlock,
+  isMerchantReadToolCall,
+} from "@/ToolCallBlocks/renderers/merchant-read.js";
 import { SendMessageToolCallBlock } from "@/ToolCallBlocks/renderers/send-message.js";
 import { SkillToolCallBlock } from "@/ToolCallBlocks/renderers/skill.js";
 import { SubmitResultToolCallBlock } from "@/ToolCallBlocks/renderers/submit-result.js";
@@ -101,6 +105,16 @@ export function resolveToolCallRenderer(context: ToolCallBlockRenderContext) {
   // 都成立（store-search 的同款理由）。
   if (isCommerceHarnessToolCall(toolCall)) {
     return CommerceHarnessToolCallBlock;
+  }
+
+  // merchant_read（别名 read_store/store_insights，merchant 侧 L3/L4 读平面：
+  // 店铺摘要/库存/近期订单）同款按名分流、同样排在 family 之前：它不在
+  // shared 的已知工具表里（identity 回 unknown → raw JSON 兜底卡会把
+  // shopSummary/inventory/orders/per_store 原样摊开）；而一旦将来被登记进
+  // 某个 family，那个兜底会画成通用卡片，丢掉店铺摘要节、库存清单、
+  // buyer-less 订单清单与逐店状态（commerce-harness 的同款理由）。
+  if (isMerchantReadToolCall(toolCall)) {
+    return MerchantReadToolCallBlock;
   }
 
   // 可复用工作流的两个工具按**工具名**先分流，刻意排在 family 之前。两个理由：
