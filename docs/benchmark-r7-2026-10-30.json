@@ -1,0 +1,1346 @@
+{
+  "meta": {
+    "tier": "fixture",
+    "generatedAt": "2026-10-30T00:00:00.000Z",
+    "corpusSize": 10,
+    "comparatorsSimulated": true,
+    "liveTierOwed": true,
+    "latencyBasis": "modeled-fixture-step-latency-not-live"
+  },
+  "perCase": [
+    {
+      "tier": "fixture",
+      "caseId": "r7-01",
+      "caseLabel": "budget satisfied, group-buy lane realizable",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": "group_buy_threshold",
+        "trueSavings": {
+          "amount": "40.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "Ground truth: the merchant's group-buy lane clears a 6-buyer threshold at HKD 340.00 — HKD 40.00 under the best observed offer (HKD 380.00). The fixture-tier capability cannot observe or draft that lane; the benchmark reports the miss, never hides it."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 2 offer(s) across alpha.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies group_buy_threshold (true savings HKD 40.00); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]; the ground-truth family answered approval_required — an honest fixture-tier miss, reported not hidden",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      },
+      "shortlistSize": 2,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 2,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-01",
+      "caseLabel": "budget satisfied, group-buy lane realizable",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "group_buy_threshold",
+        "trueSavings": {
+          "amount": "40.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "Ground truth: the merchant's group-buy lane clears a 6-buyer threshold at HKD 340.00 — HKD 40.00 under the best observed offer (HKD 380.00). The fixture-tier capability cannot observe or draft that lane; the benchmark reports the miss, never hides it."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) carried 2 offer(s) with zero violated hard constraints — success under the same L5 law, single-store view",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-01",
+      "caseLabel": "budget satisfied, group-buy lane realizable",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "group_buy_threshold",
+        "trueSavings": {
+          "amount": "40.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "Ground truth: the merchant's group-buy lane clears a 6-buyer threshold at HKD 340.00 — HKD 40.00 under the best observed offer (HKD 380.00). The fixture-tier capability cannot observe or draft that lane; the benchmark reports the miss, never hides it."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-02",
+      "caseLabel": "budget violated on every observed offer",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": false,
+        "note": "Every observed offer exceeds the budget on the subtotal alone — the honest answer is an empty shortlist and success=false, never a fabricated in-budget offer."
+      },
+      "taskSuccess": false,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted zero offers — an honest empty (the binding constraint is recorded in the intent-level satisfaction), never a fabricated offer",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies no realizable family (true savings unknown); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]",
+      "freshnessViolations": 0,
+      "latencyMs": 100,
+      "toolCalls": 4,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 3,
+      "bestOfferPrice": null,
+      "shortlistSize": 0,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 2,
+          "status": "ok"
+        },
+        {
+          "platform": "shopify",
+          "store": "Fixture Beta Store",
+          "count": 1,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-02",
+      "caseLabel": "budget violated on every observed offer",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": false,
+        "note": "Every observed offer exceeds the budget on the subtotal alone — the honest answer is an empty shortlist and success=false, never a fabricated in-budget offer."
+      },
+      "taskSuccess": false,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) satisfied no hard constraint",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": null
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-02",
+      "caseLabel": "budget violated on every observed offer",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": false,
+        "note": "Every observed offer exceeds the budget on the subtotal alone — the honest answer is an empty shortlist and success=false, never a fabricated in-budget offer."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 3,
+      "bestOfferPrice": {
+        "amount": "500.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-03",
+      "caseLabel": "offers and budget denominated in different currencies",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The offers are denominated off the budget's currency and the two stores disagree with each other — with no FX source connected, the honest verdict is unknown totals, never an invented exchange rate."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 3 offer(s) across alpha.fixture.invalid, beta.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies no realizable family (true savings unknown); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]",
+      "freshnessViolations": 0,
+      "latencyMs": 100,
+      "toolCalls": 4,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 3,
+      "bestOfferPrice": {
+        "amount": "30.00",
+        "currency": "USD"
+      },
+      "shortlistSize": 3,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 2,
+          "status": "ok"
+        },
+        {
+          "platform": "shopify",
+          "store": "Fixture Beta Store",
+          "count": 1,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-03",
+      "caseLabel": "offers and budget denominated in different currencies",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The offers are denominated off the budget's currency and the two stores disagree with each other — with no FX source connected, the honest verdict is unknown totals, never an invented exchange rate."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) carried 2 offer(s) with zero violated hard constraints — success under the same L5 law, single-store view",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "30.00",
+        "currency": "USD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-03",
+      "caseLabel": "offers and budget denominated in different currencies",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The offers are denominated off the budget's currency and the two stores disagree with each other — with no FX source connected, the honest verdict is unknown totals, never an invented exchange rate."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "violated",
+      "costCorrectnessDetail": "the naive policy ranked listed prices across different currencies (USD, EUR) as bare numbers — an implicit one-to-one exchange assumption; FX invented by policy, scored as a violation",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 3,
+      "bestOfferPrice": {
+        "amount": "30.00",
+        "currency": "USD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-04",
+      "caseLabel": "coupon promotion lane realizable",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": "coupon_promotion_eligibility",
+        "trueSavings": {
+          "amount": "39.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "Ground truth: a 10% site coupon applies at checkout — HKD 39.00 off the observed HKD 390.00 price. The Tier-1 public catalog exposes no promotions surface, so the harness honestly refuses to predict it; the benchmark reports the miss."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 1 offer(s) across alpha.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies coupon_promotion_eligibility (true savings HKD 39.00); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]; the ground-truth family answered not_supported — an honest fixture-tier miss, reported not hidden",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "390.00",
+        "currency": "HKD"
+      },
+      "shortlistSize": 1,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 1,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-04",
+      "caseLabel": "coupon promotion lane realizable",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "coupon_promotion_eligibility",
+        "trueSavings": {
+          "amount": "39.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "Ground truth: a 10% site coupon applies at checkout — HKD 39.00 off the observed HKD 390.00 price. The Tier-1 public catalog exposes no promotions surface, so the harness honestly refuses to predict it; the benchmark reports the miss."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) carried 1 offer(s) with zero violated hard constraints — success under the same L5 law, single-store view",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "390.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-04",
+      "caseLabel": "coupon promotion lane realizable",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "coupon_promotion_eligibility",
+        "trueSavings": {
+          "amount": "39.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "Ground truth: a 10% site coupon applies at checkout — HKD 39.00 off the observed HKD 390.00 price. The Tier-1 public catalog exposes no promotions surface, so the harness honestly refuses to predict it; the benchmark reports the miss."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "390.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-05",
+      "caseLabel": "wait-or-buy lane realizable",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": "wait_or_buy",
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "Ground truth: waiting is realizable (the season-end sale reliably reprises this class of item), but the eventual price is unknowable in advance — the true saving stays honestly unknown, exactly as the harness's prediction refuses a magnitude."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 1 offer(s) across alpha.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": true,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies wait_or_buy (true savings unknown); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]; the ground-truth family answered feasible — the realizable lane was surfaced feasible",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      },
+      "shortlistSize": 1,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 1,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-05",
+      "caseLabel": "wait-or-buy lane realizable",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "wait_or_buy",
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "Ground truth: waiting is realizable (the season-end sale reliably reprises this class of item), but the eventual price is unknowable in advance — the true saving stays honestly unknown, exactly as the harness's prediction refuses a magnitude."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) carried 1 offer(s) with zero violated hard constraints — success under the same L5 law, single-store view",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-05",
+      "caseLabel": "wait-or-buy lane realizable",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "wait_or_buy",
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "Ground truth: waiting is realizable (the season-end sale reliably reprises this class of item), but the eventual price is unknowable in advance — the true saving stays honestly unknown, exactly as the harness's prediction refuses a magnitude."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-06",
+      "caseLabel": "no realizable savings family",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The observed in-budget price is already the cheapest path in this fixture world — no coupon, group-buy, counteroffer, or cheaper substitute exists to realize, so false savings must be zero here."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 1 offer(s) across alpha.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies no realizable family (true savings unknown); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "350.00",
+        "currency": "HKD"
+      },
+      "shortlistSize": 1,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 1,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-06",
+      "caseLabel": "no realizable savings family",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The observed in-budget price is already the cheapest path in this fixture world — no coupon, group-buy, counteroffer, or cheaper substitute exists to realize, so false savings must be zero here."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) carried 1 offer(s) with zero violated hard constraints — success under the same L5 law, single-store view",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "350.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-06",
+      "caseLabel": "no realizable savings family",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The observed in-budget price is already the cheapest path in this fixture world — no coupon, group-buy, counteroffer, or cheaper substitute exists to realize, so false savings must be zero here."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "350.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-07",
+      "caseLabel": "one store answers rate_limited (failure tolerance)",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": "approved_substitutes",
+        "trueSavings": {
+          "amount": "30.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "The observed substitute (HKD 350.00) beats the best exact offer (HKD 380.00) by HKD 30.00. Meanwhile the second store answers rate_limited on both of its steps — the harness must record that failure honestly in the per-store strip while the first store still shortlists."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 1 offer(s) across alpha.fixture.invalid, beta.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": true,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies approved_substitutes (true savings HKD 30.00); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [approved_substitutes]; the ground-truth family answered feasible — the realizable lane was surfaced feasible",
+      "freshnessViolations": 0,
+      "latencyMs": 100,
+      "toolCalls": 4,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      },
+      "shortlistSize": 1,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [
+        "approved_substitutes"
+      ],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 1,
+          "status": "ok"
+        },
+        {
+          "platform": "shopify",
+          "store": "Fixture Beta Store",
+          "status": "error",
+          "error": "rate_limited",
+          "message": "Fixture rate limit: the beta store's public catalog answers 429 rate_limited on both of its steps (fixture tier — no live provider was contacted)."
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-07",
+      "caseLabel": "one store answers rate_limited (failure tolerance)",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "approved_substitutes",
+        "trueSavings": {
+          "amount": "30.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "The observed substitute (HKD 350.00) beats the best exact offer (HKD 380.00) by HKD 30.00. Meanwhile the second store answers rate_limited on both of its steps — the harness must record that failure honestly in the per-store strip while the first store still shortlists."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) carried 1 offer(s) with zero violated hard constraints — success under the same L5 law, single-store view",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-07",
+      "caseLabel": "one store answers rate_limited (failure tolerance)",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": "approved_substitutes",
+        "trueSavings": {
+          "amount": "30.00",
+          "currency": "HKD"
+        },
+        "expectedSuccess": true,
+        "note": "The observed substitute (HKD 350.00) beats the best exact offer (HKD 380.00) by HKD 30.00. Meanwhile the second store answers rate_limited on both of its steps — the harness must record that failure honestly in the per-store strip while the first store still shortlists."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": {
+        "amount": "380.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-08",
+      "caseLabel": "zero findings anywhere (honest empty)",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": false,
+        "note": "Both fixture catalogs answer ok with zero matching items — an honest empty with success=false, never a fabricated offer and never a silently missing family answer."
+      },
+      "taskSuccess": false,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted zero offers — an honest empty (the binding constraint is recorded in the intent-level satisfaction), never a fabricated offer",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies no realizable family (true savings unknown); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]",
+      "freshnessViolations": 0,
+      "latencyMs": 100,
+      "toolCalls": 4,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 0,
+      "bestOfferPrice": null,
+      "shortlistSize": 0,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 0,
+          "status": "ok"
+        },
+        {
+          "platform": "shopify",
+          "store": "Fixture Beta Store",
+          "count": 0,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-08",
+      "caseLabel": "zero findings anywhere (honest empty)",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": false,
+        "note": "Both fixture catalogs answer ok with zero matching items — an honest empty with success=false, never a fabricated offer and never a silently missing family answer."
+      },
+      "taskSuccess": false,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) satisfied no hard constraint",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 0,
+      "bestOfferPrice": null
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-08",
+      "caseLabel": "zero findings anywhere (honest empty)",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": false,
+        "note": "Both fixture catalogs answer ok with zero matching items — an honest empty with success=false, never a fabricated offer and never a silently missing family answer."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 0,
+      "bestOfferPrice": null
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-09",
+      "caseLabel": "minimal intent — every constraint unknown",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "No constraint was expressed — the harness must mark every field unknown and never guess one; success here only means offers were observed. The single-token query also means no broadened substitutes probe runs."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 2 offer(s) across alpha.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies no realizable family (true savings unknown); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "320.00",
+        "currency": "HKD"
+      },
+      "shortlistSize": 2,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 2,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-09",
+      "caseLabel": "minimal intent — every constraint unknown",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "No constraint was expressed — the harness must mark every field unknown and never guess one; success here only means offers were observed. The single-token query also means no broadened substitutes probe runs."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) carried 2 offer(s) with zero violated hard constraints — success under the same L5 law, single-store view",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "320.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-09",
+      "caseLabel": "minimal intent — every constraint unknown",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "No constraint was expressed — the harness must mark every field unknown and never guess one; success here only means offers were observed. The single-token query also means no broadened substitutes probe runs."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "320.00",
+        "currency": "HKD"
+      }
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-10",
+      "caseLabel": "cheaper in-budget offer lives on the second store",
+      "comparator": "unicom-harness",
+      "comparatorDescription": "The REAL commerce-harness flow (runHarnessFlow) over this case's fixture stores and fixture observations — the only real code path in this benchmark (read-only authority, fixture tier; no live provider is contacted).",
+      "simulated": false,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The only in-budget offer lives on the second store — a single-store policy cannot find it; the harness's cross-store plan does. This is the incumbent comparator's own simulated limitation, not a rigged failure."
+      },
+      "taskSuccess": true,
+      "cannotJudge": false,
+      "taskSuccessDetail": "the real flow shortlisted 1 offer(s) across alpha.fixture.invalid, beta.fixture.invalid — success per the L5 law (non-empty shortlist, zero violated hard constraints, unknowns marked)",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "every landed total stays null where a component is unobserved; no cross-currency comparison entered a budget verdict; the best observed subtotal is same-currency only",
+      "trueSavings": false,
+      "falseSavings": false,
+      "savingsDetail": "ground truth certifies no realizable family (true savings unknown); surfaced feasible: [wait_or_buy, approved_substitutes]; savings claims: [none]",
+      "freshnessViolations": 0,
+      "latencyMs": 100,
+      "toolCalls": 4,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "360.00",
+        "currency": "HKD"
+      },
+      "shortlistSize": 1,
+      "feasibleFamilies": [
+        "wait_or_buy",
+        "approved_substitutes"
+      ],
+      "savingsClaimFamilies": [],
+      "perStore": [
+        {
+          "platform": "bigcommerce",
+          "store": "Fixture Alpha Store",
+          "count": 1,
+          "status": "ok"
+        },
+        {
+          "platform": "shopify",
+          "store": "Fixture Beta Store",
+          "count": 1,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-10",
+      "caseLabel": "cheaper in-budget offer lives on the second store",
+      "comparator": "provider-native-incumbent",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation of incumbent behavior — NOT a live provider measurement): a principal on one provider's native app searches only that provider's store (the case's first store). It cannot compare cross-store, cannot evaluate counterfactual families, and cannot verify constraints beyond what that single store's findings state; its task success requires that single store's findings to satisfy the intent's hard constraints (the same L5 law, single-store view).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The only in-budget offer lives on the second store — a single-store policy cannot find it; the harness's cross-store plan does. This is the incumbent comparator's own simulated limitation, not a rigged failure."
+      },
+      "taskSuccess": false,
+      "cannotJudge": false,
+      "taskSuccessDetail": "its single store (Fixture Alpha Store, alpha.fixture.invalid) satisfied no hard constraint — an offer satisfying the same constraints existed on beta.fixture.invalid: cross-store comparison is outside this simulated single-store policy's reach",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "single-store listed prices passed through verbatim; no totals summed; no FX applied — an unverifiable budget fit stays unverified",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the incumbent never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 25,
+      "toolCalls": 1,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid"
+      ],
+      "findingsConsidered": 1,
+      "bestOfferPrice": null
+    },
+    {
+      "tier": "fixture",
+      "caseId": "r7-10",
+      "caseLabel": "cheaper in-budget offer lives on the second store",
+      "comparator": "general-purpose-baseline",
+      "comparatorDescription": "SIMULATED policy (fixture-tier simulation — NOT a live assistant measurement): a generic assistant searches every searchable store but carries no hard-constraint envelope (no budget or size filtering), ranks naively by listed price (bare numbers — cross-currency comparisons included), marks landed totals unknown, and never proposes counterfactuals. It cannot judge constraint satisfaction (cannot-judge).",
+      "simulated": true,
+      "groundTruth": {
+        "realizableFamily": null,
+        "trueSavings": null,
+        "expectedSuccess": true,
+        "note": "The only in-budget offer lives on the second store — a single-store policy cannot find it; the harness's cross-store plan does. This is the incumbent comparator's own simulated limitation, not a rigged failure."
+      },
+      "taskSuccess": null,
+      "cannotJudge": true,
+      "taskSuccessDetail": "the baseline carries no hard-constraint envelope — it cannot judge budget, size, condition or deadline satisfaction; recorded cannot-judge (null) and counted as not-successful in the aggregate",
+      "costCorrectness": "exact-unknowns-marked",
+      "costCorrectnessDetail": "listed prices passed through verbatim; landed totals marked unknown; the naive rank compared same-currency listings only",
+      "trueSavings": "not-applicable",
+      "falseSavings": "not-applicable",
+      "savingsDetail": "not-applicable — the baseline never proposes counterfactual families, so there is no savings surface to score (recorded not-applicable, not false)",
+      "freshnessViolations": 0,
+      "latencyMs": 50,
+      "toolCalls": 2,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "searchedDomains": [
+        "alpha.fixture.invalid",
+        "beta.fixture.invalid"
+      ],
+      "findingsConsidered": 2,
+      "bestOfferPrice": {
+        "amount": "360.00",
+        "currency": "HKD"
+      }
+    }
+  ],
+  "aggregate": {
+    "unicom-harness": {
+      "tier": "fixture",
+      "comparator": "unicom-harness",
+      "simulated": false,
+      "cases": 10,
+      "taskSuccessRate": 0.8,
+      "costCorrectnessRate": 1,
+      "cannotJudgeCount": 0,
+      "trueSavingsCount": 2,
+      "falseSavingsCount": 0,
+      "savingsApplicable": true,
+      "opportunityPrecision": 1,
+      "opportunityRecall": 0.5,
+      "freshnessViolations": 0,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "medianLatencyMs": 75,
+      "totalToolCalls": 29
+    },
+    "provider-native-incumbent": {
+      "tier": "fixture",
+      "comparator": "provider-native-incumbent",
+      "simulated": true,
+      "cases": 10,
+      "taskSuccessRate": 0.7,
+      "costCorrectnessRate": 1,
+      "cannotJudgeCount": 0,
+      "trueSavingsCount": 0,
+      "falseSavingsCount": 0,
+      "savingsApplicable": false,
+      "opportunityPrecision": null,
+      "opportunityRecall": null,
+      "freshnessViolations": 0,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "medianLatencyMs": 25,
+      "totalToolCalls": 10
+    },
+    "general-purpose-baseline": {
+      "tier": "fixture",
+      "comparator": "general-purpose-baseline",
+      "simulated": true,
+      "cases": 10,
+      "taskSuccessRate": 0,
+      "costCorrectnessRate": 0.9,
+      "cannotJudgeCount": 10,
+      "trueSavingsCount": 0,
+      "falseSavingsCount": 0,
+      "savingsApplicable": false,
+      "opportunityPrecision": null,
+      "opportunityRecall": null,
+      "freshnessViolations": 0,
+      "unauthorizedActions": 0,
+      "privacyLeaks": 0,
+      "humanInterventions": 0,
+      "medianLatencyMs": 37.5,
+      "totalToolCalls": 15
+    }
+  }
+}
