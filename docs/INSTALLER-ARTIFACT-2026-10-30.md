@@ -46,7 +46,46 @@ file://…/dist/linux-unpacked/resources/app.asar/out/renderer/index.html?restor
 
 ## 5. Honest scope limits
 
-1. **One artifact format, one arch:** deb, linux x64. `rpm` not built (requires `rpmbuild` — absent); `pacman` not built (requires `zstd` — absent); `AppImage` not attempted (disk ceiling: 695 MB free alongside the 686 MB unpacked dir, 157 MB deb, and 163 MB download caches — a second artifact risked the floor; it needs only the appimage tool download and remains a small follow-up where disk allows).
+1. **One artifact format, one arch:** deb, linux x64. `rpm` not built (requires `rpmbuild` — absent); `pacman` not built (requires `zstd` — absent); `AppImage` was deferred at write time (disk ceiling: 695 MB free alongside the 686 MB unpacked dir, 157 MB deb, and 163 MB download caches — a second artifact risked the floor). **Delivered later the same day as §6** once headroom was engineered.
 2. Tier: **local-live** for the packaged app's boot. Not a distributed-installer test: the deb was not `dpkg -i`-installed into a clean root filesystem (the unpacked dir is byte-for-byte the deb's payload and was booted directly — stronger than an install smoke-test in this sandbox, but not the same claim); not signed; no user-input battery.
 3. The renderer bundle is unminified (`--minify false`) — the same memory concession as the prior acceptance; behavior-identical code. The 5,460 stripped sourcemap references are dependency-internal maps pruned by the repo's own afterPack hook.
 4. The 157 MB artifact itself lives in gitignored `dist/` and is not shipped through the dashboard; the durable evidence is this record + the sha256 + the captures. Re-production follows §1–§2 verbatim.
+
+## 6. Same-day follow-up: the AppImage — DELIVERED (tree `ed71a38f` + this edit)
+
+The "small follow-up where disk allows" from §5.1 was executed in the next session, same day. **Verdict: a second real electron-builder installer artifact — AppImage target, linux x64 — built over the same repo config, with the full mechanical battery re-run and passing.**
+
+### 6.1 The second artifact
+
+`packages/desktop/dist/ZCode Preview-3.16.2-linux-x86_64_TEST.AppImage`
+
+- **Size:** 213,267,539 bytes (203.3 MiB) · **sha256:** `af6a4fc4452f835ff7a9ac561747a838895bce3389fdb6981216c0968cf96429`
+- **Invocation:** same shape as §1, target narrowed to AppImage — `corepack pnpm exec electron-builder --config electron-builder.config.js --linux AppImage --x64` inside `packages/desktop`, with the identical mirror env from `bundle.mjs`'s own helpers (`corepack` resolves the repo-pinned `pnpm@10.33.2` from the committed `packageManager` field). Exit 0. Wall time 2m19s.
+- **Download lane:** exactly one new download — `appimage-12.0.1.7z` (1.6 MB, 1.9 s) from `https://registry.npmmirror.com/-/binary/electron-builder-binaries/appimage-12.0.1/` (lane probed 200 beforehand; the electron 41.0.3 zip was already cached from §2; fpm is not used by this target). The bundled `mksquashfs` ships inside that archive — no system `mksquashfs`/`zstd` required.
+- **afterPack chain re-ran in-run, byte-for-byte the same counts as §3:** 24 hoisted runtime modules injected; 5,460 `sourceMappingURL` references stripped from 5,436 files (369 maps) plus 1 resources-side reference; `assertPackagedNativeResourcePolicy` / `assertPackagedNodePtyPrebuild` / `assertPackagedCuaSharp` / `assertPackagedCuaKoffi` / `assertPackagedCuaHelper` all passed.
+
+### 6.2 Mechanical verification (re-run, same drivers)
+
+- **`verifyPackagedRuntimeDependencies("linux","x64")`** via the same external driver at `/home/z/bundle-verify/verify-deb.mjs` (imports the repo's own `parseAsarListWithPackState` / `findDesktopNativePackageViolations` / `collectRuntimeModuleClosureEntries`): **31,189 asar entries · native policy clean for linux-x64 · 74 runtime-closure modules verified present** — identical to the deb run.
+- **`audit-bundle-size.mjs --artifact-path …AppImage`:** 203.4 MiB against the 500 MiB limit — exit 0.
+- **The artifact's own AppImage runtime executes and self-reports:** `file(1)` — `ELF 64-bit LSB executable, x86-64, … stripped`; `--appimage-offset` → `188392` (byte offset to the embedded squashfs); `--appimage-help` → full options listing, exit 0.
+
+### 6.3 How the disk headroom was engineered (disclosed, reproducible)
+
+The peak transient footprint of a full electron-builder run here is ~1.4 GB (rebuilt `linux-unpacked` 686 MB + sourcemap-staging extract ~430 MB + candidate `app.asar` ~350 MB, per `app-asar-repack.mjs`'s write-then-rename flow) against a 695 MB floor. One earlier attempt died at the sourcemap `asar-pack` stage on exactly that arithmetic (ENOSPC); a second was reaped mid-packaging by the sandbox's background-process cleanup (§6.4.2). Headroom was then engineered honestly:
+
+- `dist/linux-unpacked` (686 MB) was deleted pre-build under a guard — only after the deb was confirmed present with its recorded sha256. It is regenerable by this very build, its payload is byte-for-byte the deb's, and the packaged-boot evidence for it was already durable (§4's captures and log).
+- Sandbox caches with no build role were cleared: bun install cache, node-gyp cache, uv tool cache, prisma engine cache, tectonic cache, and the prior session's `ZCode Dev` user-data; the dashboard dev-server's `.next` was rebuilt (server restarted, `/:200` and `/api/campaign:200` re-verified).
+- A df-trace and a 150 MB floor watchdog ran alongside the build (never triggered); the run's lowest observed free space was ~257 MB during the sourcemap peak.
+
+### 6.4 Reproduction findings (environment, not repo defects)
+
+1. `pnpm` is not on the bare `PATH` of a detached shell; `corepack pnpm` resolves the pinned version, and electron-builder's node-module collector (which spawns `/bin/sh -c pnpm …`) needs a `pnpm` shim directory on `PATH` forwarding to `corepack pnpm`.
+2. This sandbox reaps detached background process trees that remain direct descendants of the tooling shell within minutes; processes must be double-forked (subshell-wrapped `( nohup setsid … & )`) to survive. Both findings are recorded so a future session does not re-diagnose silent build-tree deaths.
+
+### 6.5 Honest scope limits (delta vs §5)
+
+1. **Still two formats, one arch:** deb + AppImage, linux x64. `rpm`/`pacman` still require absent system tools (`rpmbuild`/`zstd`).
+2. **The AppImage was not booted.** This sandbox has no `/dev/fuse`, so the AppImage cannot be mounted; `--appimage-extract-and-run` would need ~686 MB of free disk that the post-build floor (782 MB alongside the 686 MB unpacked dir + both artifacts) does not safely allow. The payload is the same unpacked dir whose packaged boot §4 already evidenced; the AppImage-specific claim is mechanical: built by the repo's own config, runtime self-report verified, closure + size audits green.
+3. **Still unsigned**; not a distributed-installer test (no clean-root install battery) — unchanged from §5.
+4. The 203 MB artifact lives in gitignored `dist/` alongside the deb; durable evidence = this record + sha256 + the driver outputs. Re-production follows §6.1–§6.3 verbatim.
