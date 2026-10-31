@@ -1,0 +1,184 @@
+# Desktop RELEASE channel — the operator addendum (2026-10-31) lane, part 2.
+#
+# "An operator-approved SemVer tag must trigger the release build. The workflow
+# must build and test all supported targets, assemble a draft GitHub Release
+# with the installers, checksums, release manifest, notices and SBOM, and leave
+# the final public-publish action behind an explicit release approval."
+#
+# The approval boundary: this workflow STOPS at a DRAFT release. Publishing is
+# the operator's explicit action (the draft's own "Publish" button) — no code
+# path here makes anything public. Nothing in either channel executes commerce
+# side effects of any kind.
+#
+# Same recorded limits as desktop-snapshot.yml: ARM64 BLOCKED; the UNICOM
+# product-identity flavor is the open gate scoped in
+# docs/DESKTOP-RELEASE-2026-10-31.md; Windows installers are unsigned until a
+# signing certificate is configured (labelled accurately, never claimed signed).
+# First live run happens on the first SemVer tag after the pending PAT push.
+
+name: desktop-release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  battery-gate:
+    # "The workflow must not publish a release from an unverified commit or
+    # bypass the required test gates." The full TL battery runs FIRST on the
+    # tagged commit — a red battery fails the release before any packaging.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: |
+          corepack enable
+          corepack prepare pnpm@10.33.2 --activate
+      - run: pnpm install --frozen-lockfile
+      - name: "§1 Services harness suites (12 files)"
+        run: pnpm exec vitest run
+          packages/services/test/commerce-harness.contract.test.ts
+          packages/services/test/commerce-harness-money.contract.test.ts
+          packages/services/test/commerce-harness-federation.contract.test.ts
+          packages/services/test/commerce-harness-lifecycle.contract.test.ts
+          packages/services/test/commerce-harness-benchmark.contract.test.ts
+          packages/services/test/commerce-harness-scenarios.contract.test.ts
+          packages/services/test/group-buy.contract.test.ts
+          packages/services/test/opportunity-store.contract.test.ts
+          packages/services/test/transport-selector.contract.test.ts
+          packages/services/test/browser-transport.contract.test.ts
+          packages/services/test/browser-recovery.contract.test.ts
+          packages/services/test/merchant-execution.contract.test.ts
+      - name: "§2 Core-island suites (R5/R6 + W1b money-boundary)"
+        run: |
+          cd apps/zcode-cli
+          pnpm --filter @zcode/contracts build
+          pnpm exec vitest run --config vitest.config.ts \
+            packages/core/tests/find-best-offer.contract.test.ts \
+            packages/core/tests/merchant-read.contract.test.ts \
+            packages/core/tests/money-boundary.contract.test.ts
+      - name: "§3 UI-renderer suites"
+        run: |
+          cd packages/ui
+          pnpm exec vitest run \
+            test/commerce-harness-renderer.contract.test.ts \
+            test/merchant-read-renderer.contract.test.ts \
+            src/ToolCallBlocks/renderers/commerce-harness-view/contract.test.ts
+      - run: pnpm run architecture:check
+      - run: pnpm run test:architecture
+      - run: pnpm run lint
+      - run: pnpm exec tsc -b packages/services
+      - name: "§8 Benchmark artifact — byte-identical"
+        run: |
+          pnpm exec tsx scripts/commerce-harness/run-benchmark.ts \
+            --at 2026-10-30T00:00:00.000Z --out /tmp/bench-rel.json
+          diff /tmp/bench-rel.json docs/benchmark-r7-2026-10-30.json
+      - name: "§9 Scenario artifact — byte-identical"
+        run: |
+          pnpm exec tsx scripts/commerce-harness/run-scenarios.ts \
+            --at 2026-10-31T00:00:00.000Z --out /tmp/scen-rel.json
+          diff /tmp/scen-rel.json docs/scenarios-w-2026-10-31.json
+
+  build:
+    needs: battery-gate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target-os: win
+            arch: x64
+          - os: ubuntu-latest
+            target-os: linux
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: |
+          corepack enable
+          corepack prepare pnpm@10.33.2 --activate
+      - run: pnpm install --frozen-lockfile
+      - name: "Bundle (${{ matrix.target-os }} ${{ matrix.arch }})"
+        run: pnpm --filter @zcode/desktop run bundle -- ${{ matrix.target-os }} ${{ matrix.arch }}
+      - name: "SHA256SUMS + release manifest fragment"
+        shell: bash
+        run: |
+          node scripts/release/sha256sums.mjs \
+            --dist packages/desktop/dist \
+            --out packages/desktop/dist/SHA256SUMS \
+            --label "release ${{ matrix.target-os }}-${{ matrix.arch }} @ ${{ github.sha }} tag ${{ github.ref_name }}"
+          node scripts/release/release-manifest.mjs \
+            --dist packages/desktop/dist \
+            --tag "${{ github.ref_name }}" \
+            --sha "${{ github.sha }}" \
+            --target "${{ matrix.target-os }}-${{ matrix.arch }}" \
+            --node "$(node --version)" \
+            --pnpm "$(pnpm --version)" \
+            --out packages/desktop/dist/release-manifest.json
+      - name: "Upload per-target build outputs (staged for the draft)"
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-${{ matrix.target-os }}-${{ matrix.arch }}
+          path: |
+            packages/desktop/dist/*
+            !packages/desktop/dist/UNPACKED
+          retention-days: 7
+          if-no-files-found: error
+
+  draft-release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Assemble the DRAFT GitHub Release (installers + SHA256SUMS + manifests)"
+        uses: actions/download-artifact@v4
+        with:
+          path: release-staging
+          merge-multiple: true
+      - name: "Gather third-party notices already staged by the build (electron-builder)"
+        run: |
+          find release-staging -name "*notices*" -o -name "LICENSE*" | head -20 || true
+      - name: "Create the draft release — NEVER publish (the operator's explicit approval boundary)"
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release-staging/**
+          body: |
+            UNiCOM desktop release candidate — DRAFT, not published.
+
+            - Tag: ${{ github.ref_name }}
+            - Source SHA: ${{ github.sha }}
+            - Battery: the full TL verification battery (§1–§9) ran green on this commit before packaging.
+            - Windows x64: NSIS installer (UNSIGNED until a signing certificate is configured — labelled accurately, never claimed signed).
+            - Linux x64: AppImage + deb + rpm.
+            - ARM64: BLOCKED — no ARM64 runner path or native-dependency proof yet (recorded in docs/DESKTOP-RELEASE-2026-10-31.md; never advertised as downloadable).
+            - Checksums: SHA256SUMS per target, generated and verified against every installer before attachment.
+            - Publishing this draft is the operator's explicit action. No commerce side effect is implied or possible here.

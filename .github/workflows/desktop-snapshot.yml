@@ -1,0 +1,86 @@
+# Desktop SNAPSHOT channel — the operator addendum (2026-10-31) lane, part 1.
+#
+# "Every successful merge to the implementation repository's default branch must
+# produce downloadable, commit-pinned Windows and Linux package artifacts through
+# GitHub Actions. Each artifact must identify the exact source commit and build
+# configuration. Snapshots are development builds, clearly labelled as such."
+#
+# What this workflow does NOT do (recorded, not excused):
+#   - ARM64: BLOCKED — no ARM64 runner path or native-dependency proof exists yet
+#     (the addendum's own law: "do not infer ARM64 support from a successful x64
+#     build; record it as BLOCKED with the exact evidence").
+#   - The packaged product identity is still ZCode/ZCode Preview (the UNICOM
+#     flavor lane is scoped in docs/DESKTOP-RELEASE-2026-10-31.md — open gate).
+#   - No release PUBLISHING here: snapshots are workflow ARTIFACTS (downloadable
+#     from the run page), never releases — see desktop-release.yml for the
+#     versioned channel with its explicit approval boundary.
+# First live run happens on the pending PAT push (the battery.yml pattern).
+
+name: desktop-snapshot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-snapshot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target-os: win
+            arch: x64
+          - os: ubuntu-latest
+            target-os: linux
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - name: Checkout (full history — the desktop build records source SHAs)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Node (repo .nvmrc: 24)"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: pnpm (repo-pinned 10.33.2 via corepack)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.2 --activate
+          pnpm --version
+
+      - name: Install (frozen lockfile; hoisted linker from the committed .npmrc)
+        run: pnpm install --frozen-lockfile
+
+      - name: "Bundle the desktop app (${{ matrix.target-os }} ${{ matrix.arch }} — the repo's own packaging path)"
+        run: pnpm --filter @zcode/desktop run bundle -- ${{ matrix.target-os }} ${{ matrix.arch }}
+
+      - name: "SHA256SUMS for every installer in dist/ (commit-pinned names)"
+        shell: bash
+        run: |
+          node scripts/release/sha256sums.mjs \
+            --dist packages/desktop/dist \
+            --out packages/desktop/dist/SHA256SUMS \
+            --label "snapshot ${{ matrix.target-os }}-${{ matrix.arch }} @ ${{ github.sha }}"
+          cat packages/desktop/dist/SHA256SUMS
+
+      - name: "Upload the snapshot artifacts (commit-pinned, clearly-labelled development builds)"
+        uses: actions/upload-artifact@v4
+        with:
+          name: UNiCOM-snapshot-${{ matrix.target-os }}-${{ matrix.arch }}-${{ github.sha }}
+          path: |
+            packages/desktop/dist/*
+            !packages/desktop/dist/UNPACKED
+          retention-days: 30
+          if-no-files-found: error

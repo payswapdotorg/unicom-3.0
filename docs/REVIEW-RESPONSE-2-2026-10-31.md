@@ -48,7 +48,9 @@ UNKNOWN ledger (`unknowns: ["shipping","tax","duties"]`) and the budget constrai
 
 ## 3. Repository governance — one confirmed residue closed by the companion UniCom commit
 
-- **README #22 → #23:** closed at `4b7150a` (the registry commit) — stale-baseline.
+- **README #22 → #23:** closed at the registry commit (`4b7150a` in the pre-reconciliation
+  chain; `54494e2` after the same-day rebase onto the operator's moved main — SHA map
+  recorded in the UniCom registry commit) — stale-baseline.
 - **The #22 state file's "active" status:** the honest residue. The registry and README
   mark #22 superseded with `prior_phase_records_immutable: true`, but the state file itself
   still says `IN_PROGRESS` with the W3-024 dispatch recorded as the last activity. The

@@ -98,6 +98,19 @@ full battery re-ran green.
   exact BigInt rational for Etsy Money; UNKNOWN never rounded — INV-14). 9 new tests
   (`apps/zcode-cli/packages/core/tests/money-boundary.contract.test.ts`). Record:
   `docs/REVIEW-RESPONSE-2-2026-10-31.md`.
+- **The desktop release lane, part 1 — the OPERATOR ADDENDUM answered same-day** (the
+  fourth follow-up commit): the operator pushed a mandatory "always-available
+  installable desktop releases" addendum to the issue #23 handoff (UniCom main
+  `a6b6db2` + README `1db783b`) WHILE this chain was pending — the campaign chain was
+  RECONCILED onto the moved main (rebase; SHA map recorded in the UniCom registry
+  commit). Delivered: the snapshot channel (`desktop-snapshot.yml`), the versioned
+  release channel with the battery gate + draft-only approval boundary
+  (`desktop-release.yml`), the verified-checksum law (`scripts/release/sha256sums.mjs`),
+  and the release manifest law (`scripts/release/release-manifest.mjs`) — all
+  workflow-committed, activating on the PAT push. Open gates recorded honestly (G1–G8,
+  `docs/DESKTOP-RELEASE-2026-10-31.md`): clean-machine install acceptance (operator
+  test environments), SBOM wiring, the UNiCOM product-identity flavor (implementation
+  map recorded; next lane), ARM64 BLOCKED by the addendum's own law.
 - **The push remains gated on a PAT.** This commit travels in the exported patch set
   until one is provided.
 
