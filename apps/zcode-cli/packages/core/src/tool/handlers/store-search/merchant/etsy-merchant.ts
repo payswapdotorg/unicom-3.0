@@ -189,9 +189,14 @@ function moneyFromEtsyMoney(v: unknown): MerchantMoney | null {
 
 /**
  * Receipt grandtotal (a decimal number in the receipt's currency) -> exact
- * money through the same cents path: Math.round(value * 100) is an integer
- * number, and BigInt() of an integer is exact — the float only ever appears
- * in the intermediate, never in the rendered string.
+ * money through the W1b boundary: the number projects via its SHORTEST
+ * ROUND-TRIP decimal text (String(value)); accepted only when that text is a
+ * plain non-negative decimal with at most two fraction digits (padding to two
+ * is the same exact value — 12.5 -> "12.50"). The former
+ * `Math.round(value * 100)` silently rounded sub-cent precision (400.005 ->
+ * "400.01") into valid money — the 2026-10-31 second operator review's
+ * confirmed finding; the boundary never rounds (INV-14), mirroring
+ * finding-money.ts's numberToExactMoneyText.
  */
 function moneyFromDecimalGrandtotal(value: unknown, currencyCode: unknown): MerchantMoney | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
@@ -200,8 +205,11 @@ function moneyFromDecimalGrandtotal(value: unknown, currencyCode: unknown): Merc
       ? currencyCode.trim()
       : null;
   if (currency === null) return null;
-  const cents = Math.round(value * 100);
-  return { amount: centsToDecimalString(BigInt(cents)), currency };
+  const text = String(value);
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(text);
+  if (match === null) return null; // sub-cent precision / exponent / negative — UNKNOWN, never rounded
+  const cents = BigInt(match[1] ?? "0") * 100n + BigInt(((match[2] ?? "") + "00").slice(0, 2));
+  return { amount: centsToDecimalString(cents), currency };
 }
 
 /** Epoch seconds -> ISO string; ms-looking values (>= 1e12) taken as-is

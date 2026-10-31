@@ -20,7 +20,7 @@ import type {
   ConnectedStoreTarget,
   HarnessMoney,
 } from "./harness.js";
-import { formatHarnessMoney, parseMoneyToCents } from "./harness.js";
+import { formatHarnessMoney, numberToExactMoneyText, parseMoneyToCents } from "./harness.js";
 
 export type OpportunityFamilyId =
   | "group_buy_threshold"
@@ -73,8 +73,13 @@ function countFindings(observations: CapabilityObservation[]): number {
 
 function findingSubtotal(finding: { price: number | null; currency: string | null }): HarnessMoney | null {
   if (finding.price === null || finding.currency === null) return null;
-  const amount = finding.price.toFixed(2);
-  return parseMoneyToCents(amount) === null ? null : { amount, currency: finding.currency };
+  // W1b: the former `finding.price.toFixed(2)` LAUNDERED sub-cent precision
+  // (400.005 → "400.00") — the same class the first review reproduced in the
+  // services module. The exact boundary (harness.js numberToExactMoneyText,
+  // the twin of finding-money.ts): sub-cent precision, exponents, negatives
+  // project to null — UNKNOWN, never rounded (INV-14).
+  const amount = numberToExactMoneyText(finding.price);
+  return amount === null ? null : { amount, currency: finding.currency };
 }
 
 function withinBudget(subtotal: HarnessMoney, budget: HarnessMoney | undefined): boolean | "unknown" {

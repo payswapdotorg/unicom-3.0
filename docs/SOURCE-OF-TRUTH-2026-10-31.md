@@ -87,6 +87,17 @@ full battery re-ran green.
   dependency lists, closure + size audits green. Record:
   `docs/INSTALLER-ARTIFACT-2026-10-30.md` §7. Signing remains the only installer open
   gate.
+- **W1b — the ingestion boundary at the remaining four core-side money sites — same-day
+  follow-up CLOSED** (the third follow-up commit, answering the SECOND 2026-10-31
+  operator review's confirmed finding): the Etsy merchant reader's
+  `Math.round(value*100)` (the review's named site), the buyer connector's
+  `Math.round((amount/divisor)*100)/100`, AND the core twin's two
+  `finding.price.toFixed(2)` sites (the deployed `find_best_offer` path — the same
+  laundering class fixed in the services module at 4558d222, missed in the twin) all
+  replaced by the exact boundary (shortest-round-trip decimal text, ≤2 fraction digits;
+  exact BigInt rational for Etsy Money; UNKNOWN never rounded — INV-14). 9 new tests
+  (`apps/zcode-cli/packages/core/tests/money-boundary.contract.test.ts`). Record:
+  `docs/REVIEW-RESPONSE-2-2026-10-31.md`.
 - **The push remains gated on a PAT.** This commit travels in the exported patch set
   until one is provided.
 
@@ -96,7 +107,8 @@ full battery re-ran green.
   `group-buy.contract.test.ts` (13), `opportunity-store.contract.test.ts` (10),
   `transport-selector.contract.test.ts` (11), `browser-recovery.contract.test.ts` (7),
   `commerce-harness-scenarios.contract.test.ts` (9) — **all new**; the six pre-existing
-  harness suites re-verified unchanged (158).
+  harness suites re-verified unchanged (158); and, added by the W1b follow-up,
+  `apps/zcode-cli/packages/core/tests/money-boundary.contract.test.ts` (9).
 - Artifacts: `docs/scenarios-w-2026-10-31.json` (new, byte-reproducible);
   `docs/benchmark-r7-2026-10-30.json` (unchanged bytes, re-verified twice).
 - The full battery: `docs/TL-VERIFICATION-BATTERY-2026-10-31.md`.

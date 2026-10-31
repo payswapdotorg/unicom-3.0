@@ -27,17 +27,20 @@ transport-selector 11 · browser-recovery 7 · scenarios 9 (= 72 new assertions 
 counted re-runs of pre-existing files: the six pre-existing files contribute 158, the
 six new files contribute 72 → 230).
 
-## 2. Core-island suites (R5/R6 — re-verified)
+## 2. Core-island suites (R5/R6 — re-verified; W1b added the money-boundary suite)
 
 ```
-cd apps/zcode-cli && pnpm --filter @zcode/contracts build \
+cd apps/zcode-cli && pnpm --filter @zcode/contracts build
   && pnpm exec vitest run --config vitest.config.ts \
        packages/core/tests/find-best-offer.contract.test.ts \
-       packages/core/tests/merchant-read.contract.test.ts
+       packages/core/tests/merchant-read.contract.test.ts \
+       packages/core/tests/money-boundary.contract.test.ts
 ```
 
-**Result: 44/44 · 2 files · exit 0** (the @zcode/contracts build is a prerequisite of
-the core test entry resolution — same as the R10 battery).
+**Result: 53/53 · 3 files · exit 0** (44 at the W-campaign run + 9 from the W1b
+follow-up's `money-boundary.contract.test.ts` — the ingestion-boundary suite that
+closed the second operator review's confirmed finding; the @zcode/contracts build
+is a prerequisite of the core test entry resolution — same as the R10 battery).
 
 ## 3. UI-renderer suites (R5/R6 + the split module — re-verified)
 
@@ -110,6 +113,7 @@ pnpm exec tsx scripts/commerce-harness/run-scenarios.ts \
 
 ---
 
-**TOTALS: 354 tests green this battery** (230 services harness + 44 core + 44 UI + 36
-governance) · 0 lint errors · architecture 0/0/0 · tsc exit 0 · both artifacts
+**TOTALS: 363 tests green this battery** (230 services harness + 53 core + 44 UI + 36
+governance — the W1b follow-up re-run at its commit; the W-campaign run itself was 354)
+· 0 lint errors · architecture 0/0/0 · tsc exit 0 · both artifacts
 byte-reproducible. Nothing upgrades tier: the fixture ceiling stands by issue #23 law.

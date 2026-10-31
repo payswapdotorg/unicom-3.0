@@ -75,14 +75,16 @@ jobs:
           packages/services/test/browser-recovery.contract.test.ts
           packages/services/test/merchant-execution.contract.test.ts
 
-      # §2 — core-island suites (the contracts build is the test entry prerequisite)
-      - name: "§2 Core-island suites (R5/R6)"
+      # §2 — core-island suites (the contracts build is the test entry prerequisite;
+      #      money-boundary added by the W1b follow-up — the ingestion-boundary suite)
+      - name: "§2 Core-island suites (R5/R6 + W1b money-boundary)"
         run: |
           cd apps/zcode-cli
           pnpm --filter @zcode/contracts build
           pnpm exec vitest run --config vitest.config.ts \
             packages/core/tests/find-best-offer.contract.test.ts \
-            packages/core/tests/merchant-read.contract.test.ts
+            packages/core/tests/merchant-read.contract.test.ts \
+            packages/core/tests/money-boundary.contract.test.ts
 
       # §3 — UI-renderer suites (R5/R6 + the split module)
       - name: "§3 UI-renderer suites"

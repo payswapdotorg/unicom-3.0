@@ -97,17 +97,46 @@ function listPayload(json: Record<string, unknown>): { count: number | null; res
   return { count, results };
 }
 
-/** Etsy Money = { amount, divisor, currency_code } -> major units. */
+/**
+ * Etsy Money = { amount, divisor, currency_code } -> major units, EXACTLY.
+ *
+ * W1b (the 2026-10-31 second operator review's confirmed finding, closed): the
+ * former `Math.round((amount / divisor) * 100) / 100` silently rounded sub-cent
+ * precision into valid money (amount=400005, divisor=1000 -> 400.005 ->
+ * "400.01"/"400.00" depending on float representation). The exact rational
+ * boundary, mirroring moneyFromEtsyMoney in the merchant twin: the value is the
+ * rational amount/divisor; `BigInt(amount) * 100` must divide by divisor
+ * EXACTLY for a 2-dp-exact value — anything else is an honest null (the price
+ * is UNKNOWN, INV-10), never a rounded float (INV-14). The returned number is
+ * the exact 2-dp rational (cents/100, correctly-rounded IEEE division), so the
+ * downstream boundary (String round-trip) re-projects it losslessly.
+ */
 function moneyMajorUnits(
   v: unknown,
 ): { value: number; currency: string | null } | null {
   if (typeof v !== "object" || v === null) return null;
   const m = v as Record<string, unknown>;
-  const amount = typeof m.amount === "number" ? m.amount : NaN;
-  const divisor = typeof m.divisor === "number" && m.divisor > 0 ? m.divisor : NaN;
-  if (!Number.isFinite(amount) || !Number.isFinite(divisor)) return null;
+  const amount = m.amount;
+  const divisor = m.divisor;
+  if (
+    typeof amount !== "number" ||
+    !Number.isFinite(amount) ||
+    !Number.isInteger(amount) ||
+    typeof divisor !== "number" ||
+    !Number.isFinite(divisor) ||
+    !Number.isInteger(divisor) ||
+    divisor <= 0
+  ) {
+    return null;
+  }
+  const scaled = BigInt(amount) * 100n;
+  const d = BigInt(divisor);
+  if (scaled % d !== 0n) return null; // sub-cent precision — UNKNOWN, never rounded
+  const cents = scaled / d;
+  const centsNumber = Number(cents);
+  if (!Number.isSafeInteger(centsNumber)) return null; // beyond exact double range — UNKNOWN
   return {
-    value: Math.round((amount / divisor) * 100) / 100,
+    value: centsNumber / 100,
     currency:
       typeof m.currency_code === "string" && m.currency_code.length > 0
         ? m.currency_code

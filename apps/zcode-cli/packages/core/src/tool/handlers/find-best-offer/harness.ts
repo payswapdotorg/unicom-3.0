@@ -55,6 +55,53 @@ export function formatHarnessMoney(money: HarnessMoney): string {
   return `${money.currency} ${absolute / 100n}.${(absolute % 100n).toString().padStart(2, "0")}`;
 }
 
+// ——— W1b: the exact number→money boundary (the twin of finding-money.ts) ———
+//
+// The 2026-10-31 second operator review's confirmed finding, closed here: the
+// core twin still projected finding prices through `finding.price.toFixed(2)`
+// — the same laundering class the first review reproduced in the services
+// module (400.005 → "400.00", valid money one step upstream of the strict
+// parser). The boundary law, mirroring the canonical
+// packages/services/src/commerce-harness/finding-money.ts: a JS number projects
+// via its SHORTEST ROUND-TRIP decimal text (`String(price)`); accepted only
+// when that text is a plain non-negative decimal with at most two fraction
+// digits — then padded to exactly two (padding is the same exact value, never
+// rounding). Any sub-cent precision (400.005, 0.1+0.2 = 0.30000000000000004),
+// an exponent form (1e-7), a negative, or a non-finite is UNKNOWN — never
+// rounded into valid money (INV-14).
+
+/** Project a JS number to its EXACT 2-dp decimal text, or null when the exact
+ * value carries sub-cent precision / an exponent / is negative or non-finite. */
+export function numberToExactMoneyText(value: number): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return null;
+  if (Object.is(value, -0)) return null;
+  const text = String(value);
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(text);
+  if (match === null) return null;
+  const whole = match[1] ?? "0";
+  const fraction = (match[2] ?? "").padEnd(2, "0");
+  return `${whole}.${fraction}`;
+}
+
+/** Why a finding's subtotal refused to project — the honest refusal reason
+ * (INV-10) embedded verbatim in the callers' detail strings (the services twin
+ * of the same name). */
+export function findingSubtotalRefusalReason(finding: {
+  price: number | null;
+  currency: string | null;
+}): string {
+  if (finding.price === null && finding.currency === null) {
+    return "the platform stated no price and no currency";
+  }
+  if (finding.price !== null && finding.currency === null) {
+    return "the platform stated a price but no currency";
+  }
+  if (finding.price !== null && numberToExactMoneyText(finding.price) === null) {
+    return `the observed numeric price ${finding.price} carries sub-cent precision (${String(finding.price)}) — it is NOT rounded into money (INV-14); the subtotal is UNKNOWN`;
+  }
+  return "no observable price basis";
+}
+
 // ——— L1: the intent envelope ———
 
 export type IntentUnknownField =
@@ -391,8 +438,12 @@ export function evaluatePlanFeasibility(plan: CapabilityPlan): StepFeasibility[]
 
 function findingSubtotal(finding: { price: number | null; currency: string | null }): HarnessMoney | null {
   if (finding.price === null || finding.currency === null) return null;
-  const amount = finding.price.toFixed(2);
-  return parseMoneyToCents(amount) === null ? null : { amount, currency: finding.currency };
+  // W1b: the former `finding.price.toFixed(2)` LAUNDERED sub-cent precision
+  // into the strict parser's input (400.005 → "400.00"). The exact boundary
+  // (numberToExactMoneyText above): sub-cent precision, exponents, negatives
+  // project to null — UNKNOWN, never rounded (INV-14).
+  const amount = numberToExactMoneyText(finding.price);
+  return amount === null ? null : { amount, currency: finding.currency };
 }
 
 function titleCarries(title: string, value: string): boolean {
@@ -413,8 +464,7 @@ function offerConstraints(
       out.push({
         constraint: "budget",
         status: "unknown",
-        detail:
-          "No observable price basis (the platform stated no price, or the budget amount is unparseable) — the budget fit is UNKNOWN, never guessed.",
+        detail: `No observable price basis (${findingSubtotalRefusalReason(finding)}) — the budget fit is UNKNOWN, never guessed.`,
       });
     } else if (subtotal.currency !== budget.currency) {
       out.push({
