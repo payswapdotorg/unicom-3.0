@@ -26,22 +26,19 @@
 // families.ts).
 
 import type { StoreConnectionRecord } from "../stores/stores.js";
-import type { CapabilityObservation, GovernedExecution, StepExecutor } from "./execution.js";
+import type { GovernedExecution, StepExecutor } from "./execution.js";
 import { assertReadOnlyAuthority } from "./execution.js";
-import type { CommerceIntentEnvelope, HarnessMoney } from "./intent.js";
-import { formatHarnessMoney, parseMoneyToCents } from "./intent.js";
+import type { CommerceIntentEnvelope } from "./intent.js";
 import type { CapabilityPlan, CapabilityPlanStep, ConnectedStoreTarget } from "./plan.js";
-import type {
-  ConstraintName,
-  ConstraintSatisfactionEntry,
-  PlanEvaluation,
-  PredictedTotals,
-  StepFeasibility,
-} from "./evaluation.js";
+import type { PlanEvaluation, StepFeasibility } from "./evaluation.js";
 import { evaluateCounterfactualFamilies, type HarnessOpportunityCandidate } from "./families.js";
+import {
+  selectTransportForOperation,
+  storeSearchApiOnlyDiscovery,
+  type TransportSelection,
+} from "./transport-selector.js";
 import type {
   BenchmarkDenominators,
-  LandedTotalBreakdown,
   OutcomeRecord,
   PerStoreEntry,
   ShortlistOffer,
@@ -114,16 +111,30 @@ export function broadenQuery(query: string): string | null {
 
 export interface PlanBuildResult {
   plan: CapabilityPlan;
+  /** W3: the operation-level transport selection record per target — the answerable "why this transport". */
+  transportSelections: TransportSelection[];
   searchableRecords: StoreConnectionRecord[];
   excludedRecords: StoreConnectionRecord[];
   webRecords: StoreConnectionRecord[];
 }
+
+/**
+ * The per-target transport discovery port (W3): the caller binds capability
+ * discovery per (operation, target). Default: the committed store_search
+ * connector set is API-only (storeSearchApiOnlyDiscovery) — plans built
+ * without a port are byte-identical to pre-W3 plans.
+ */
+export type TransportDiscoveryPort = (
+  operation: "store_search",
+  target: ConnectedStoreTarget,
+) => Parameters<typeof selectTransportForOperation>[0];
 
 /** Build the plan: one exact step + (when broadenable) one substitutes step per searchable store. */
 export function buildCapabilityPlan(
   intent: CommerceIntentEnvelope,
   records: StoreConnectionRecord[],
   now: Date,
+  options?: { discoverTransport?: TransportDiscoveryPort },
 ): PlanBuildResult {
   const searchableRecords: StoreConnectionRecord[] = [];
   const excludedRecords: StoreConnectionRecord[] = [];
@@ -141,17 +152,30 @@ export function buildCapabilityPlan(
     searchableRecords.push(record);
   }
 
+  const discoverTransport = options?.discoverTransport;
   const broadened = broadenQuery(intent.query);
   const steps: CapabilityPlanStep[] = [];
+  const transportSelections: TransportSelection[] = [];
   let index = 0;
   for (const record of searchableRecords) {
     const target = projectStoreTarget(record);
+    // W3: operation-level transport selection per (operation, target). Default
+    // discovery is API-only — byte-identical to pre-W3 plans. A caller-bound
+    // discovery may answer the browser fallback; the selection record is kept
+    // on the plan (the answerable "why this transport").
+    const selection =
+      discoverTransport === undefined
+        ? selectTransportForOperation(storeSearchApiOnlyDiscovery())
+        : selectTransportForOperation(discoverTransport("store_search", target));
+    transportSelections.push(selection);
+    const transport: CapabilityPlanStep["transport"] =
+      selection.selectedTransport ?? "api";
     index += 1;
     steps.push({
       id: `step-${index}`,
       target,
       operation: "store_search",
-      transport: "api",
+      transport,
       authorityClass: "read-only",
       purpose: "exact",
       query: intent.query,
@@ -167,7 +191,7 @@ export function buildCapabilityPlan(
         id: `step-${index}`,
         target,
         operation: "store_search",
-        transport: "api",
+        transport,
         authorityClass: "read-only",
         purpose: "substitutes",
         query: broadened,
@@ -183,6 +207,7 @@ export function buildCapabilityPlan(
 
   return {
     plan: { createdAt: now.toISOString(), consentBasis: intent.consentBasis, steps },
+    transportSelections,
     searchableRecords,
     excludedRecords,
     webRecords,
@@ -221,349 +246,24 @@ export function evaluatePlanFeasibility(plan: CapabilityPlan): StepFeasibility[]
   });
 }
 
-// ——— constraint evaluation (HARD CONSTRAINTS FIRST; INV-10 everywhere) ———
+// ——— the offer-evaluation half (split into offer-evaluation.ts; re-exported) ———
 
-/** Project a finding's numeric platform price to exact money (projection once; then BigInt cents only). */
-function findingSubtotal(finding: {
-  price: number | null;
-  currency: string | null;
-}): HarnessMoney | null {
-  if (finding.price === null || finding.currency === null) return null;
-  const amount = finding.price.toFixed(2);
-  return parseMoneyToCents(amount) === null ? null : { amount, currency: finding.currency };
-}
-
-function titleCarries(title: string, value: string): boolean {
-  const needle = value.trim().toLowerCase();
-  return needle.length >= 2 && title.toLowerCase().includes(needle);
-}
-
-/** Per-offer constraint statuses for the EXPRESSED constraints only (absent = UNKNOWN, never evaluated as a guess). */
-function offerConstraints(
-  intent: CommerceIntentEnvelope,
-  finding: { title: string; price: number | null; currency: string | null },
-): { constraint: ConstraintName; status: "satisfied" | "unknown" | "violated"; detail: string }[] {
-  const out: { constraint: ConstraintName; status: "satisfied" | "unknown" | "violated"; detail: string }[] = [];
-  const budget = intent.maxLandedTotalCost;
-  if (budget !== undefined) {
-    const budgetCents = parseMoneyToCents(budget.amount);
-    const subtotal = findingSubtotal(finding);
-    if (subtotal === null || budgetCents === null) {
-      out.push({
-        constraint: "budget",
-        status: "unknown",
-        detail:
-          "No observable price basis (the platform stated no price, or the budget amount is unparseable) — the budget fit is UNKNOWN, never guessed.",
-      });
-    } else if (subtotal.currency !== budget.currency) {
-      out.push({
-        constraint: "budget",
-        status: "unknown",
-        detail: `Currency mismatch — observed subtotal in ${subtotal.currency}, budget in ${budget.currency}. The harness invents no exchange rate; the fit is UNKNOWN.`,
-      });
-    } else {
-      const subtotalCents = parseMoneyToCents(subtotal.amount);
-      if (subtotalCents !== null && subtotalCents > budgetCents) {
-        out.push({
-          constraint: "budget",
-          status: "violated",
-          detail: `Observed subtotal ${formatHarnessMoney(subtotal)} exceeds the budget ${formatHarnessMoney(budget)} on the subtotal alone (shipping/tax/duties would only add).`,
-        });
-      } else {
-        out.push({
-          constraint: "budget",
-          status: "unknown",
-          detail: `Observed subtotal ${formatHarnessMoney(subtotal)} is within the budget ${formatHarnessMoney(budget)}, but shipping/tax/duties are unobserved — the landed total is UNKNOWN.`,
-        });
-      }
-    }
-  }
-  if (intent.size !== undefined) {
-    out.push(
-      titleCarries(finding.title, intent.size)
-        ? {
-            constraint: "size",
-            status: "satisfied",
-            detail: `The finding's title carries "${intent.size}" (title-text evidence).`,
-          }
-        : {
-            constraint: "size",
-            status: "unknown",
-            detail: `The public-catalog finding exposes no variant availability — "${intent.size}" is unconfirmed (not refuted); confirm on the product page.`,
-          },
-    );
-  }
-  if (intent.brand !== undefined) {
-    out.push(
-      titleCarries(finding.title, intent.brand)
-        ? {
-            constraint: "brand",
-            status: "satisfied",
-            detail: `The finding's title carries "${intent.brand}" (title-text evidence).`,
-          }
-        : {
-            constraint: "brand",
-            status: "unknown",
-            detail: `The finding carries no brand field and the title doesn't mention "${intent.brand}" — the brand is unconfirmed, not refuted.`,
-          },
-    );
-  }
-  if (intent.condition !== undefined) {
-    out.push({
-      constraint: "condition",
-      status: "unknown",
-      detail: `The public catalog states no condition field — "${intent.condition}" is unconfirmed (retail listings are typically new, but the harness does not assume).`,
-    });
-  }
-  if (intent.deadline !== undefined) {
-    out.push({
-      constraint: "deadline",
-      status: "unknown",
-      detail: `Delivery timing is unobserved (no shipping capability is connected) — arrival by ${intent.deadline} is UNKNOWN.`,
-    });
-  }
-  return out;
-}
-
-function landedTotalFor(subtotal: HarnessMoney | null): LandedTotalBreakdown {
-  return {
-    subtotal,
-    shipping: null,
-    tax: null,
-    duties: null,
-    total: null,
-    unknowns:
-      subtotal === null
-        ? ["subtotal", "shipping", "tax", "duties"]
-        : ["shipping", "tax", "duties"],
-  };
-}
-
-/**
- * Build the shortlist from the EXACT-query observations: HARD CONSTRAINTS
- * FIRST — an offer with any VIOLATED constraint is excluded (with the
- * violation recorded in the intent-level satisfaction); UNKNOWN constraints
- * keep the offer IN, marked unknown (INV-10). Rank: confirmed-first
- * (satisfied DESC, unknown ASC), then cheapest same-currency subtotal,
- * then observation order.
- */
-export function buildShortlist(
-  intent: CommerceIntentEnvelope,
-  exactObservations: CapabilityObservation[],
-): ShortlistOffer[] {
-  const offers: ShortlistOffer[] = [];
-  for (const observation of exactObservations) {
-    if (observation.outcome !== "ok") continue;
-    for (const finding of observation.findings ?? []) {
-      const constraints = offerConstraints(intent, finding);
-      if (constraints.some((entry) => entry.status === "violated")) continue;
-      const subtotal = findingSubtotal(finding);
-      offers.push({
-        rank: 0,
-        platform: finding.platform,
-        store: finding.store,
-        store_domain: finding.store_domain,
-        title: finding.title,
-        price: finding.price,
-        currency: finding.currency,
-        url: finding.url,
-        image_url: finding.image_url,
-        published_at: finding.published_at,
-        ...(finding.truncated === true ? { truncated: true } : {}),
-        landedTotal: landedTotalFor(subtotal),
-        constraints,
-      });
-    }
-  }
-
-  offers.sort((a, b) => {
-    const aSatisfied = a.constraints.filter((entry) => entry.status === "satisfied").length;
-    const bSatisfied = b.constraints.filter((entry) => entry.status === "satisfied").length;
-    if (aSatisfied !== bSatisfied) return bSatisfied - aSatisfied;
-    const aUnknown = a.constraints.filter((entry) => entry.status === "unknown").length;
-    const bUnknown = b.constraints.filter((entry) => entry.status === "unknown").length;
-    if (aUnknown !== bUnknown) return aUnknown - bUnknown;
-    const budget = intent.maxLandedTotalCost;
-    if (budget !== undefined) {
-      const aCents =
-        a.landedTotal.subtotal !== null && a.landedTotal.subtotal.currency === budget.currency
-          ? parseMoneyToCents(a.landedTotal.subtotal.amount)
-          : null;
-      const bCents =
-        b.landedTotal.subtotal !== null && b.landedTotal.subtotal.currency === budget.currency
-          ? parseMoneyToCents(b.landedTotal.subtotal.amount)
-          : null;
-      if (aCents !== null && bCents !== null && aCents !== bCents) return aCents < bCents ? -1 : 1;
-    }
-    return 0;
-  });
-  offers.forEach((offer, index) => {
-    offer.rank = index + 1;
-  });
-  return offers;
-}
-
-/** Intent-level constraint satisfaction — the FIRST violated constraint is the binding one (the renderer's empty state). */
-export function evaluateIntentConstraints(
-  intent: CommerceIntentEnvelope,
-  exactObservations: CapabilityObservation[],
-  shortlist: ShortlistOffer[],
-): ConstraintSatisfactionEntry[] {
-  const entries: ConstraintSatisfactionEntry[] = [];
-  const budget = intent.maxLandedTotalCost;
-  if (budget !== undefined) {
-    const budgetCents = parseMoneyToCents(budget.amount);
-    let sameCurrency = 0;
-    let overBudget = 0;
-    let cheapest: HarnessMoney | null = null;
-    let cheapestCents: bigint | null = null;
-    let priced = 0;
-    let mismatched = 0;
-    for (const observation of exactObservations) {
-      if (observation.outcome !== "ok") continue;
-      for (const finding of observation.findings ?? []) {
-        const subtotal = findingSubtotal(finding);
-        if (subtotal === null) continue;
-        priced += 1;
-        if (subtotal.currency !== budget.currency) {
-          mismatched += 1;
-          continue;
-        }
-        sameCurrency += 1;
-        const cents = parseMoneyToCents(subtotal.amount);
-        if (cents === null || budgetCents === null) continue;
-        if (cents > budgetCents) overBudget += 1;
-        if (cheapestCents === null || cents < cheapestCents) {
-          cheapestCents = cents;
-          cheapest = subtotal;
-        }
-      }
-    }
-    if (priced === 0) {
-      entries.push({
-        constraint: "budget",
-        status: "unknown",
-        detail: "No priced offer was observed — the budget fit is UNKNOWN.",
-      });
-    } else if (sameCurrency === 0) {
-      entries.push({
-        constraint: "budget",
-        status: "unknown",
-        detail: `Every observed price is in a currency other than ${budget.currency} — the harness invents no exchange rate; the budget fit is UNKNOWN.`,
-      });
-    } else if (overBudget === sameCurrency) {
-      entries.push({
-        constraint: "budget",
-        status: "violated",
-        detail: `Every same-currency observed subtotal exceeds ${formatHarnessMoney(budget)} — cheapest observed: ${cheapest === null ? "unknown" : formatHarnessMoney(cheapest)}. The budget is the binding constraint.`,
-      });
-    } else {
-      entries.push({
-        constraint: "budget",
-        status: "unknown",
-        detail: `At least one observed subtotal is within ${formatHarnessMoney(budget)} on the subtotal, but shipping/tax/duties are unobserved on every offer — the landed-total fit is UNKNOWN.`,
-      });
-    }
-  }
-  const rollup = (name: ConstraintName, label: string): ConstraintSatisfactionEntry => {
-    const shortlistEntry = shortlist.some((offer) =>
-      offer.constraints.some((entry) => entry.constraint === name && entry.status === "satisfied"),
-    );
-    if (shortlistEntry) {
-      return {
-        constraint: name,
-        status: "satisfied",
-        detail: `At least one shortlisted offer's title carries the ${label} evidence — see the offer's constraint line.`,
-      };
-    }
-    return {
-      constraint: name,
-      status: "unknown",
-      detail: `The connected public-catalog capability cannot confirm the ${label} constraint on any offer — UNKNOWN, never guessed (see each offer's constraint line).`,
-    };
-  };
-  if (intent.size !== undefined) entries.push(rollup("size", "size"));
-  if (intent.brand !== undefined) entries.push(rollup("brand", "brand"));
-  if (intent.condition !== undefined) entries.push(rollup("condition", "condition"));
-  if (intent.deadline !== undefined) entries.push(rollup("deadline", "deadline"));
-  return entries;
-}
-
-/** The predicted landed total with uncertainty (never a live quote — INV-16/17/30). */
-export function evaluatePredictedTotals(
-  intent: CommerceIntentEnvelope,
-  exactObservations: CapabilityObservation[],
-): PredictedTotals {
-  const budget = intent.maxLandedTotalCost ?? null;
-  let best: (HarnessMoney & { offerTitle: string }) | null = null;
-  let bestCents: bigint | null = null;
-  let anyObserved = false;
-  let anySameCurrency = false;
-  if (budget !== null) {
-    for (const observation of exactObservations) {
-      if (observation.outcome !== "ok") continue;
-      for (const finding of observation.findings ?? []) {
-        const subtotal = findingSubtotal(finding);
-        if (subtotal === null) continue;
-        anyObserved = true;
-        if (subtotal.currency !== budget.currency) continue;
-        anySameCurrency = true;
-        const cents = parseMoneyToCents(subtotal.amount);
-        if (cents !== null && (bestCents === null || cents < bestCents)) {
-          bestCents = cents;
-          best = { ...subtotal, offerTitle: finding.title };
-        }
-      }
-    }
-  }
-  const unknowns = ["shipping", "tax", "duties"];
-  if (budget !== null && anyObserved && !anySameCurrency) {
-    unknowns.push("exchange rate (no FX source is connected — none is invented)");
-  }
-  return {
-    budget,
-    bestObservedSubtotal: best,
-    currencyMatch: budget === null || !anyObserved ? null : anySameCurrency,
-    landedTotalKnown: false,
-    unknowns,
-  };
-}
-
-/** The honest per-store strip from the EXACT observations (the store_search per_store contract, verbatim). */
-export function buildPerStoreStrip(
-  exactObservations: CapabilityObservation[],
-  displayPlatform: (platform: string) => string,
-): PerStoreEntry[] {
-  return exactObservations.map((observation) => {
-    const platform = displayPlatform(observation.target.platform);
-    if (observation.outcome === "ok") {
-      return {
-        platform,
-        store: observation.target.label,
-        count: observation.findings?.length ?? 0,
-        status: "ok" as const,
-        ...(observation.truncated === true ? { truncated: true } : {}),
-      };
-    }
-    if (observation.error === undefined) {
-      return {
-        platform,
-        store: observation.target.label,
-        status: "error" as const,
-        error: "unknown",
-        message: "The observation carried no error payload — the outcome is preserved as unknown.",
-      };
-    }
-    return {
-      platform,
-      store: observation.target.label,
-      status: observation.error.code === "not_configured" ? ("not_configured" as const) : ("error" as const),
-      error: observation.error.code,
-      message: observation.error.message,
-    };
-  });
-}
-
+// The constraint-evaluation / shortlist / predicted-totals / per-store-strip
+// composition moved to offer-evaluation.ts at the 2026-10-31 W-campaign
+// (planner.ts exceeded the 800-line architecture ceiling). The public surface
+// is re-exported verbatim — the split is a file-level fact, not an API change.
+export {
+  buildShortlist,
+  evaluateIntentConstraints,
+  evaluatePredictedTotals,
+  buildPerStoreStrip,
+} from "./offer-evaluation.js";
+import {
+  buildShortlist,
+  evaluateIntentConstraints,
+  evaluatePredictedTotals,
+  buildPerStoreStrip,
+} from "./offer-evaluation.js";
 // ——— L5: the outcome record ———
 
 export function buildOutcomeRecord(input: {
@@ -607,6 +307,13 @@ export interface HarnessFlowInput {
   displayPlatform?: (platform: string) => string;
   /** Clock injection (defaults to the real clock). */
   now?: () => Date;
+  /**
+   * W3: the per-target transport discovery port. Default: API-only discovery
+   * (byte-identical to pre-W3 plans). Bind this to route an operation over the
+   * browser/computer-use fallback when its API/MCP routes are absent — the
+   * authority law is unchanged either way.
+   */
+  discoverTransport?: TransportDiscoveryPort;
 }
 
 export interface HarnessFlowResult {
@@ -632,7 +339,9 @@ export async function runHarnessFlow(input: HarnessFlowInput): Promise<HarnessFl
   const notices: string[] = [];
   if (state.readError !== undefined) notices.push(state.readError);
 
-  const build = buildCapabilityPlan(input.intent, state.stores, now());
+  const build = buildCapabilityPlan(input.intent, state.stores, now(), {
+    discoverTransport: input.discoverTransport,
+  });
   const feasibility = evaluatePlanFeasibility(build.plan);
 
   if (state.stores.length === 0) {

@@ -54,10 +54,11 @@ export interface ConstraintSatisfactionEntry {
 }
 
 /**
- * The predicted landed total with uncertainty. `landedTotalKnown` is false in
- * v1 BY CONSTRUCTION: no connected Tier-1 public catalog states shipping, tax,
- * duties or a landed total, and the harness NEVER fabricates an exchange rate
- * or a shipping estimate (INV-14 unknowns-marked-unknown law).
+ * The predicted landed total with uncertainty. `landedTotalKnown` is true ONLY
+ * when at least one observed finding carried EVERY landed component
+ * (subtotal+shipping+tax+duties — W1-b's observed landed totals); otherwise
+ * false, and the harness NEVER fabricates an exchange rate or a shipping
+ * estimate (INV-14 unknowns-marked-unknown law).
  */
 export interface PredictedTotals {
   /** The principal's stated budget (exact money), or null when absent (UNKNOWN). */
@@ -70,8 +71,12 @@ export interface PredictedTotals {
    * either side is absent (UNKNOWN).
    */
   currencyMatch: boolean | null;
-  /** Always false in v1 — no connected capability observes landed totals. */
-  landedTotalKnown: false;
+  /**
+   * True ONLY when at least one observed offer carried EVERY landed component
+   * (subtotal+shipping+tax+duties — W1-b); false when only subtotals were
+   * observed; null when nothing was observed at all.
+   */
+  landedTotalKnown: boolean | null;
   /** What is unknown about the landed total (shipping, tax, duties, FX, …). */
   unknowns: string[];
 }

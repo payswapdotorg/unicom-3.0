@@ -65,7 +65,8 @@
 // not-live in meta), so a fixed clock makes the whole run byte-deterministic.
 
 import type { ObservedFinding } from "./execution.js";
-import { formatHarnessMoney, parseMoneyToCents } from "./intent.js";
+import { findingSubtotal } from "./finding-money.js";
+import { formatHarnessMoney } from "./intent.js";
 import type { HarnessMoney } from "./intent.js";
 import type { HarnessOpportunityCandidate, OpportunityFamilyId } from "./families.js";
 import {
@@ -235,11 +236,9 @@ function isSavingsBearingClaim(candidate: HarnessOpportunityCandidate): boolean 
   );
 }
 
-/** Project a platform listed price to exact money (the projection-once law, INV-14). */
+/** Project a platform listed price through the canonical exact boundary (W1-a — never rounds; sub-cent precision refuses to project). */
 function projectListedPrice(finding: ObservedFinding): HarnessMoney | null {
-  if (finding.price === null || finding.currency === null) return null;
-  const amount = finding.price.toFixed(2);
-  return parseMoneyToCents(amount) === null ? null : { amount, currency: finding.currency };
+  return findingSubtotal(finding);
 }
 
 /** MEASURE the money laws over a shortlist (never assert them): unknowns stay unknown, no FX enters a verdict. */

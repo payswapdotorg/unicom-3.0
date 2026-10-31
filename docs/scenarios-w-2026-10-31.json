@@ -1,0 +1,215 @@
+{
+  "fixtureLabel": "FIXTURE-TIER SCENARIO RECORD — labelled fixture data only; never production-reachable",
+  "scenarioSuite": "the 2026-10-31 operator review's five demanded acceptance demonstrations",
+  "generatedAt": "2026-10-31T00:00:00.000Z",
+  "clockPinned": true,
+  "laws": {
+    "tier": "fixture — issue #23 law: no live network, no real browser, no live provider execution",
+    "money": "INV-14 — every monetary number below is an exact string decimal + explicit currency",
+    "evidence": "INV-30 — counterfactual prices are conditional, never live quotes",
+    "unknowns": "INV-10 — unknown stays unknown; no number is guessed"
+  },
+  "scenarios": [
+    {
+      "name": "find cheaper shoes",
+      "tier": "fixture",
+      "lawsProved": [
+        "the best observed offer is constraint-ranked with the budget answer UNKNOWN until landed costs are observed (INV-10)",
+        "the group-buy counterfactual is COMPUTED in exact BigInt cents against the CHEAPEST observed offer — every number labelled with its basis",
+        "the conditional opportunity lists the exact prerequisites that unlock the price; the tier price is never a live quote (INV-30)"
+      ],
+      "bestObservedOffer": {
+        "title": "Fixture Runner Sneakers EU 44",
+        "subtotal": {
+          "amount": "100.00",
+          "currency": "HKD"
+        },
+        "budgetStatus": "unknown",
+        "budgetDetail": "Observed subtotal HKD 100.00 is within the budget HKD 500.00, but the landed total is UNKNOWN (shipping, tax, duties unobserved) — the total-budget fit is UNKNOWN.",
+        "landedTotalKnown": false
+      },
+      "computedGroupBuyCounterfactual": {
+        "feasibility": "approval_required",
+        "evidenceClass": "conditional",
+        "observedFacts": "The exact search observed \"Fixture Runner Sneakers EU 44\" at HKD 100.00 (Fixture Shoe Store) [basis: observed]. The catalog at shoes.fixture.invalid PUBLISHES a volume tier: minQuantity 20 → unit price HKD 80.00 [basis: published-volume-tier — an observed catalog fact].",
+        "predictedOutcome": "Per-participant saving: HKD 20.00 per participant [exact BigInt-cents arithmetic on the observed price and the published tier]. Total group saving: HKD 400.00 across 20 participants. The threshold is the merchant's PUBLISHED volume tier (an observed catalog fact). This is a CONDITIONAL opportunity — it becomes actionable only when every prerequisite holds, and the tier price is never rendered as a live quote (INV-30).",
+        "preconditions": [
+          "the merchant honors the threshold price HKD 80.00 at checkout — the threshold is the merchant's PUBLISHED volume tier (an observed catalog fact)",
+          "a group of at least 20 compatible, consented buyers actually commits (compatible demand, every participant consenting — never coerced or bundled)",
+          "a fresh independent re-observation of the price and the tier before any purchase (the issue #23 W2 freshness law — a conditional price is never a live quote)",
+          "a merchant-communication / group-coordination capability is connected and authorized (approval-required) — v1 holds none",
+          "the principal approves joining the group and the committed price"
+        ],
+        "expiresAt": "2026-11-01T00:00:00.000Z"
+      },
+      "substitutesFamily": {
+        "observedFacts": "The broadened substitutes search observed 1 item(s) in the connected catalog(s), 1 within the stated budget (HKD 500.00) on the observed subtotal — cheapest: \"Fixture Trainer Lite EU 44\" at HKD 85.00 (Fixture Shoe Store). These are live catalog price observations, not held quotes.",
+        "predictedOutcome": "An in-budget purchase today from the observed substitutes — conditional on the principal approving one. The observed prices are live catalog observations; before purchase the chosen item needs a fresh check (stock and price)."
+      }
+    },
+    {
+      "name": "the opportunity travels between nodes",
+      "tier": "fixture",
+      "lawsProved": [
+        "the privacy gate runs FIRST: a private record never touches the wire (no envelope, no trace)",
+        "the generalized projection travels — never the private intent; received records stay conditional by law (INV-30)",
+        "node B matches the received opportunity against ITS OWN user's intent (a pure read — never a reservation or a purchase)"
+      ],
+      "publication": {
+        "published": true,
+        "reason": null
+      },
+      "receivedByNodeB": [
+        {
+          "id": "opp_471005fb",
+          "originNodeId": "node-a",
+          "family": "group_buy_threshold",
+          "currency": "HKD",
+          "status": "active",
+          "evidenceClass": "conditional"
+        }
+      ],
+      "nodeBMatchForOwnUser": {
+        "family": "group_buy_threshold",
+        "originNodeId": "node-a",
+        "budgetCompatible": true,
+        "matchBasis": "family group_buy_threshold is one of the eight contract counterfactual families; the projection is active and same-currency (HKD); budget band: compatible (the projected band fits the stated budget). A match NEVER reserves, buys, publishes, messages, or authorizes anything (issue #23 W2 law)."
+      },
+      "privacyGateProbe": {
+        "published": false,
+        "reason": "private-intent"
+      }
+    },
+    {
+      "name": "browser-only platform operation",
+      "tier": "fixture",
+      "lawsProved": [
+        "operation-level selection routes to the browser ONLY as the fallback — and carries the authority class unchanged",
+        "the authority gate refuses an unapproved act BEFORE any page interaction",
+        "a click is never proof: only the READ-BACK observation claims success",
+        "selector drift recovers ONCE, structurally, with the re-approval law honored"
+      ],
+      "transportSelection": {
+        "operation": "update_price",
+        "selectedTransport": "browser",
+        "candidates": [
+          {
+            "transport": "api",
+            "selected": false,
+            "reason": "declared unavailable",
+            "discoveryReason": "the platform exposes no pricing API for this scope"
+          },
+          {
+            "transport": "mcp",
+            "selected": false,
+            "reason": "not declared by the connected capability",
+            "discoveryReason": "the connected capability declares no such transport for this operation"
+          },
+          {
+            "transport": "cli",
+            "selected": false,
+            "reason": "not declared by the connected capability",
+            "discoveryReason": "the connected capability declares no such transport for this operation"
+          },
+          {
+            "transport": "browser",
+            "selected": true,
+            "reason": null,
+            "discoveryReason": "the merchant web UI exposes the pricing form (labelled fixture)"
+          }
+        ],
+        "authorityClass": "approval-required",
+        "refusalSummary": null
+      },
+      "unapprovedActOutcome": "automation_denied",
+      "approvedActOutcome": "ok",
+      "readBackOutcome": "ok",
+      "readBackValue": "Price updated to 99.00",
+      "honestRecovery": {
+        "finalOutcome": "ok",
+        "strategy": "selector-drift-relocation",
+        "relocatedElementId": "save-button-v2",
+        "retryAttempted": true
+      }
+    },
+    {
+      "name": "merchant workflow",
+      "tier": "fixture",
+      "lawsProved": [
+        "a RECOMMENDATION is pure analysis — nothing counted, nothing written",
+        "a PREPARED change is draft-only — no transport is consulted at prepare or preview time",
+        "an ATTEMPTED change without approval is refused BEFORE the transport (the gate throws; the port is never invoked)",
+        "a VERIFIED change carries the read-back record — the only basis for claiming the write landed"
+      ],
+      "recommendation": {
+        "analysis": "the observed price is 15% below the category median — raising it to 99.00 is projected to recover margin",
+        "transportEffects": 0
+      },
+      "preparedChange": {
+        "status": "prepared",
+        "transportEffectsAtPrepare": 0
+      },
+      "preview": {
+        "before": "HKD 85.00",
+        "after": "HKD 99.00",
+        "lines": [
+          "price_update — product fixture-product-1 on Fixture Shop (shop.fixture.invalid)",
+          "before: HKD 85.00",
+          "after: HKD 99.00",
+          "change: +HKD 14.00 (exact BigInt-cents diff)",
+          "money: exact string decimals + explicit HKD (INV-14 — BigInt cents only)"
+        ]
+      },
+      "unapprovedAttempt": {
+        "refused": true,
+        "reason": "Merchant authority gate: draft merchant-change|price_update|fixture-product-1|2026-10-31T00:00:00.000Z (price_update on shop.fixture.invalid, status \"previewed\") was refused BEFORE any transport call. Nothing was attempted. Reason: missing-approval — no single-operation ApprovalRecord bound to the draft id was presented",
+        "transportEffects": 1
+      },
+      "approvedExecution": {
+        "status": "executing",
+        "transportEffects": 1
+      },
+      "verification": {
+        "status": "verified",
+        "expected": "HKD 99.00",
+        "observedValue": "HKD 99.00",
+        "reason": "read-back matched the expectation exactly (\"HKD 99.00\") — the only basis for claiming success"
+      }
+    },
+    {
+      "name": "comparative benchmark",
+      "tier": "fixture",
+      "lawsProved": [
+        "exactly one REAL comparator (the harness flow); the two incumbents are labelled simulations",
+        "the artifact's own meta states the tier, the owed live tier, and the modeled latency basis",
+        "no multiplier language anywhere in the artifact"
+      ],
+      "meta": {
+        "tier": "fixture",
+        "generatedAt": "2026-10-31T00:00:00.000Z",
+        "corpusSize": 10,
+        "comparatorsSimulated": true,
+        "liveTierOwed": true,
+        "latencyBasis": "modeled-fixture-step-latency-not-live"
+      },
+      "aggregates": {
+        "unicom-harness": {
+          "simulated": false,
+          "taskSuccessRate": 0.8,
+          "costCorrectnessRate": 1
+        },
+        "provider-native-incumbent": {
+          "simulated": true,
+          "taskSuccessRate": 0.7,
+          "costCorrectnessRate": 1
+        },
+        "general-purpose-baseline": {
+          "simulated": true,
+          "taskSuccessRate": 0,
+          "costCorrectnessRate": 0.9
+        }
+      },
+      "reference": "docs/benchmark-r7-2026-10-30.json (byte-reproducible under --at)"
+    }
+  ]
+}

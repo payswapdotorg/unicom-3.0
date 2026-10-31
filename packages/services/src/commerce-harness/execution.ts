@@ -41,6 +41,16 @@ export type CapabilityFailureCode = Exclude<CapabilityOutcomeCode, "ok" | "unkno
  * One observed finding — the committed store_search finding fields, verbatim
  * (REPORT.md §4): price/currency null = UNKNOWN (the platform stated none),
  * never fabricated.
+ *
+ * W1 additive fields (all optional — pre-W1 findings stay valid):
+ *   - priceText: the source monetary value preserved as a decimal string at
+ *     the connector boundary (the 2026-10-31 review's preservation path).
+ *     Honored verbatim by finding-money.ts — validated, never re-formatted.
+ *   - variant: the observed variant/option descriptor (e.g. "EU 44 · Black")
+ *     — variant-level evidence for size matching, when the catalog exposes it.
+ *   - landed: the observed landed-cost components (shipping/tax/duties, each
+ *     null = UNKNOWN). A landed total is claimed only when ALL components are
+ *     observed (finding-money.ts).
  */
 export interface ObservedFinding {
   platform: string;
@@ -53,6 +63,19 @@ export interface ObservedFinding {
   image_url: string | null;
   published_at: string | null;
   truncated?: boolean;
+  /** The source price preserved as a decimal string (W1 — the connector boundary's preservation path). */
+  priceText?: string | null;
+  /** The observed variant/option descriptor — variant-level matching evidence (W1-c). */
+  variant?: string | null;
+  /** The observed landed-cost components (W1-b — each null = UNKNOWN, never zero-by-default). */
+  landed?: {
+    shipping: number | null;
+    tax: number | null;
+    duties: number | null;
+    shippingText?: string | null;
+    taxText?: string | null;
+    dutiesText?: string | null;
+  } | null;
 }
 
 /** A fresh observation produced by one governed plan step (INV-8, INV-29). */

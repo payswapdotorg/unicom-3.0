@@ -32,6 +32,11 @@ import type { CapabilityObservation } from "./execution.js";
 import type { CommerceIntentEnvelope, HarnessMoney } from "./intent.js";
 import type { ConnectedStoreTarget } from "./plan.js";
 import { formatHarnessMoney, parseMoneyToCents } from "./intent.js";
+import { findingSubtotal } from "./finding-money.js";
+import {
+  selectApplicableVolumeTier,
+  type MerchantVolumeTier,
+} from "./group-buy.js";
 
 /** The eight contract families (issue #23). */
 export type OpportunityFamilyId =
@@ -100,6 +105,14 @@ export interface FamiliesEvaluationInput {
   exactObservations: CapabilityObservation[];
   /** The broadened substitutes observations (purpose "substitutes") — may be empty (single-token query). */
   substitutesObservations: CapabilityObservation[];
+  /**
+   * W2: merchant volume tiers published by the connected catalogs (labelled
+   * fixture data at this tier). When a tier applies to an observed exact-search
+   * price, the group-buy family CARRIES the computed counterfactual (exact
+   * BigInt cents, every basis labelled) instead of refusing. Absent → the
+   * honest refusal stands, unchanged.
+   */
+  merchantVolumeTiers?: readonly MerchantVolumeTier[];
   /** The observation clock (ISO timestamp of the governed execution). */
   observedAt: string;
 }
@@ -115,16 +128,6 @@ function countFindings(observations: CapabilityObservation[]): number {
     if (observation.outcome === "ok") total += observation.findings?.length ?? 0;
   }
   return total;
-}
-
-/** Project a finding's numeric platform price to exact money (INV-14: projection once, then BigInt cents only). */
-function findingSubtotal(finding: {
-  price: number | null;
-  currency: string | null;
-}): HarnessMoney | null {
-  if (finding.price === null || finding.currency === null) return null;
-  const amount = finding.price.toFixed(2);
-  return parseMoneyToCents(amount) === null ? null : { amount, currency: finding.currency };
 }
 
 /** Is this observed subtotal within the budget? Same currency only — the harness never invents an FX rate. */
@@ -398,8 +401,111 @@ function evaluateCouponEligibility(
 
 // ——— the five framework slots (each answers with its exact reason) ———
 
+/**
+ * Family: group-buy threshold — W2's COMPUTED counterfactual.
+ *
+ * When the connected catalog publishes a volume tier that applies to an
+ * observed exact-search price (merchantVolumeTiers input — labelled fixture
+ * data at this tier), the family CARRIES the exact BigInt-cents computation:
+ * per-participant saving, required participants, prerequisites — every number
+ * labelled with its basis (the 2026-10-31 review's demanded calculation).
+ * The candidate is STILL conditional (INV-30) and STILL approval-required:
+ * realizing it needs the merchant to honor the tier and a consented group.
+ *
+ * Without tiers (or with none applicable), the honest refusal stands
+ * verbatim — a group-buy price is never predicted or simulated.
+ */
 function evaluateGroupBuy(input: FamiliesEvaluationInput): HarnessOpportunityCandidate {
-  const { targets, observedAt } = input;
+  const { intent, targets, exactObservations, observedAt } = input;
+
+  // THE BASELINE LAW (the review's demanded shape, honestly measured): the
+  // counterfactual is computed against the CHEAPEST observed exact-search
+  // offer — the principal's best CURRENT option. Measuring against a worse
+  // listing would inflate the saving (a defect, not a feature), so the tier
+  // application happens ONLY on the cheapest finding, against the tier table
+  // its OWN store publishes.
+  let cheapestFinding: { title: string; store: string; storeDomain: string; subtotal: HarnessMoney } | null = null;
+  let cheapestCents: bigint | null = null;
+  for (const observation of exactObservations) {
+    if (observation.outcome !== "ok") continue;
+    for (const finding of observation.findings ?? []) {
+      const subtotal = findingSubtotal(finding);
+      if (subtotal === null) continue;
+      const cents = parseMoneyToCents(subtotal.amount);
+      if (cents !== null && (cheapestCents === null || cents < cheapestCents)) {
+        cheapestCents = cents;
+        cheapestFinding = {
+          title: finding.title,
+          store: finding.store,
+          storeDomain: finding.store_domain,
+          subtotal,
+        };
+      }
+    }
+  }
+  let computed: ReturnType<typeof selectApplicableVolumeTier> = null;
+  if (cheapestFinding !== null && input.merchantVolumeTiers !== undefined && input.merchantVolumeTiers.length > 0) {
+    // The tier applies only to the catalog that PUBLISHES it: the tier's
+    // storeDomain must match the finding's own store domain (a tier from
+    // another store is another store's fact, never this offer's threshold).
+    const ownStoreTiers = input.merchantVolumeTiers.filter(
+      (tier) => tier.storeDomain === cheapestFinding.storeDomain,
+    );
+    computed = selectApplicableVolumeTier(cheapestFinding.subtotal, ownStoreTiers);
+  }
+
+  if (computed !== null && cheapestFinding !== null) {
+    const { tier, computation } = computed;
+    const prerequisites = [
+      ...computation.prerequisites,
+      "a merchant-communication / group-coordination capability is connected and authorized (approval-required) — v1 holds none",
+      "the principal approves joining the group and the committed price",
+    ];
+    return {
+      family: "group_buy_threshold",
+      title: "Group-buy threshold",
+      feasibility: "approval_required",
+      reason:
+        "COMPUTED counterfactual (W2): the merchant's PUBLISHED volume tier applies to an observed price — the " +
+        "saving is calculated in exact BigInt cents, never simulated. Realizing it still requires the merchant to " +
+        "honor the tier and a consented buyer group — consequential actions under authority classes v1 does not " +
+        "hold (approval-required).",
+      evidenceClass: "conditional",
+      observedFacts:
+        `The exact search observed "${cheapestFinding.title}" at ${formatHarnessMoney(cheapestFinding.subtotal)} ` +
+        `(${cheapestFinding.store}) [basis: observed]. The catalog at ${tier.storeDomain} PUBLISHES a volume tier: ` +
+        `minQuantity ${tier.minQuantity} → unit price ${formatHarnessMoney(tier.unitPrice)} [basis: ` +
+        "published-volume-tier — an observed catalog fact].",
+      changedAssumptions:
+        `The unit price changes because ${computation.requiredParticipants} buyers commit together — the tier's ` +
+        "threshold price replaces the single-unit observed price for each participant.",
+      predictedOutcome:
+        `Per-participant saving: ${computation.renderedSaving} [exact BigInt-cents arithmetic on the observed ` +
+        `price and the published tier]. Total group saving: ` +
+        `${computation.totalGroupSaving === null ? "UNKNOWN" : formatHarnessMoney(computation.totalGroupSaving)} ` +
+        `across ${computation.requiredParticipants} participants. The threshold is ${computation.renderedThresholdBasis}. ` +
+        "This is a CONDITIONAL opportunity — it becomes actionable only when every prerequisite holds, and the " +
+        "tier price is never rendered as a live quote (INV-30).",
+      preconditions: prerequisites,
+      evidence: {
+        source:
+          "the exact store_search observation + the merchant's published volume-tier table (labelled fixture data at this tier)",
+        observedAt,
+        freshness: "live-observed",
+        expiresAt: observedAtPlusFreshness(observedAt),
+      },
+      consentRequired:
+        "the principal approves the group's commitment and the tier price before any participation",
+      authorityRequired: "approval-required (merchant communication + a consequential group commitment)",
+    };
+  }
+
+  const tiersNote =
+    input.merchantVolumeTiers === undefined
+      ? "No merchant volume-tier table was provided to the evaluation."
+      : input.merchantVolumeTiers.length === 0
+        ? "The provided merchant volume-tier table is empty."
+        : "The provided volume-tier table contains no tier that applies to any observed price (a tier must be same-currency, strictly cheaper, and require >= 2 participants).";
   return {
     family: "group_buy_threshold",
     title: "Group-buy threshold",
@@ -411,8 +517,8 @@ function evaluateGroupBuy(input: FamiliesEvaluationInput): HarnessOpportunityCan
     evidenceClass: "conditional",
     observedFacts:
       `Capability inspection: the connected record(s) (${targetDomainList(targets) || "none connected"}) are Tier-1 ` +
-      "public catalog reads. No merchant-communication capability, no group-buy surface, no buyer-coordination " +
-      "capability is connected or observable.",
+      `public catalog reads. No merchant-communication capability, no group-buy surface, no buyer-coordination ` +
+      `capability is connected or observable. ${tiersNote}`,
     changedAssumptions:
       "The unit price changes because N buyers commit together — a negotiated threshold the harness cannot observe " +
       "or draft in v1.",
@@ -422,6 +528,7 @@ function evaluateGroupBuy(input: FamiliesEvaluationInput): HarnessOpportunityCan
     preconditions: [
       "a merchant-communication capability is connected and authorized (approval-required)",
       "the principal approves the negotiated threshold and the buyer group",
+      ...(intent.deadline === undefined ? [] : [`the group forms before ${intent.deadline}`]),
     ],
     evidence: {
       source: "capability inspection: the connected Tier-1 public-catalog store records",
@@ -429,7 +536,8 @@ function evaluateGroupBuy(input: FamiliesEvaluationInput): HarnessOpportunityCan
       freshness: "capability-inspection",
       expiresAt: null,
     },
-    consentRequired: "the principal approves the group's commitment and the negotiated price",
+    consentRequired:
+      "the principal approves the group's commitment and the negotiated price",
     authorityRequired: "approval-required (merchant communication + a consequential group commitment)",
   };
 }

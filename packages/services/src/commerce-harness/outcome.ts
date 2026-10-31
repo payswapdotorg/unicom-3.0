@@ -31,15 +31,15 @@ import type { ConstraintName, ConstraintStatus } from "./evaluation.js";
  * subtotal with an unknown shipping cost into a fake "total".
  */
 export interface LandedTotalBreakdown {
-  /** The observed listed price, projected once to exact money. Null = unknown. */
+  /** The observed listed price, projected ONCE through the canonical exact boundary (W1). Null = unknown. */
   subtotal: HarnessMoney | null;
-  /** Unobserved in v1 (no shipping capability connected). Null = unknown. */
+  /** The observed shipping component. Null = unknown (never zero-by-default). */
   shipping: HarnessMoney | null;
-  /** Unobserved in v1. Null = unknown. */
+  /** The observed tax component. Null = unknown. */
   tax: HarnessMoney | null;
-  /** Unobserved in v1. Null = unknown. */
+  /** The observed duties component. Null = unknown. */
   duties: HarnessMoney | null;
-  /** Null = unknown (never a fabricated sum of unknowns). */
+  /** Present ONLY when subtotal+shipping+tax+duties are all observed (W1-b) — the exact BigInt-cents sum. Null = unknown. */
   total: HarnessMoney | null;
   /** What is unknown about this offer's landed total. */
   unknowns: string[];
@@ -60,6 +60,9 @@ export interface ShortlistOffer {
   image_url: string | null;
   published_at: string | null;
   truncated?: boolean;
+  // — the W1 additive finding fields (optional; pre-W1 findings stay valid) —
+  priceText?: string;
+  variant?: string;
   // — the harness layers —
   landedTotal: LandedTotalBreakdown;
   /** Per expressed hard constraint: satisfied | unknown | violated (only expressed constraints appear). */
