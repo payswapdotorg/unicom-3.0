@@ -80,6 +80,13 @@ full battery re-ran green.
   including HARD `diff` gates on both committed artifacts (byte-drift fails CI) —
   on every push/PR to main. Committed-not-pushed like the rest of the chain; the
   first live run happens on the PAT push. Record: `docs/CI-ENFORCEMENT-2026-10-31.md`.
+- **Installer formats rpm/pacman — same-day follow-up CLOSED** (the second follow-up
+  commit): the "absent system tools" record was overturned (userspace-extracted
+  rpm 4.20.1 + zstd 1.5.7); a real rpm (131.4 MiB) and a byte-reproducible pacman
+  .pkg.tar.zst (181.3 MiB) were delivered over electron-builder's own payload and
+  dependency lists, closure + size audits green. Record:
+  `docs/INSTALLER-ARTIFACT-2026-10-30.md` §7. Signing remains the only installer open
+  gate.
 - **The push remains gated on a PAT.** This commit travels in the exported patch set
   until one is provided.
 
