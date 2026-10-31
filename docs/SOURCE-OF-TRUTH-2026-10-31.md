@@ -75,8 +75,11 @@ full battery re-ran green.
   authorization.
 - **No new integrations.** The review's advice was taken: no marketplace broadening —
   the core ideas were completed instead.
-- **CI remains unconfigured.** The gates ran as the TL battery below (recorded in-repo);
-  the CI open gate stands.
+- ~~**CI remains unconfigured.**~~ **CLOSED same day** (the follow-up commit):
+  `.github/workflows/battery.yml` now enforces the full battery — §1–§9 verbatim,
+  including HARD `diff` gates on both committed artifacts (byte-drift fails CI) —
+  on every push/PR to main. Committed-not-pushed like the rest of the chain; the
+  first live run happens on the PAT push. Record: `docs/CI-ENFORCEMENT-2026-10-31.md`.
 - **The push remains gated on a PAT.** This commit travels in the exported patch set
   until one is provided.
 

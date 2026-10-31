@@ -1,0 +1,130 @@
+# The battery, enforced on every push and pull request to main.
+#
+# This workflow is the CI-enforcement closure of the 2026-10-31 operator
+# review's adopted criticism: "gates run as TL verification batteries
+# recorded in-repo, not CI-enforced." Every command below is copied
+# VERBATIM from docs/TL-VERIFICATION-BATTERY-2026-10-31.md (§1–§9), which
+# was re-proven green at this commit's tree in the campaign sandbox
+# (354/354 · lint 0 errors · architecture 0/0/0 · tsc exit 0 · both
+# artifacts byte-identical).
+#
+# What this workflow does NOT do (issue #23 law, unchanged):
+#   - no live network beyond package installation itself
+#   - no real browser, no live provider execution
+#   - no tier upgrade of any gate — the fixture ceiling stands
+#
+# Bootstrap honesty note: the pnpm cold-install bootstrap is standard
+# CI usage (corepack, repo-pinned pnpm@10.33.2, frozen lockfile, the
+# committed .npmrc hoisted linker) but was NOT re-proven end-to-end in
+# the campaign sandbox (its node_modules already exists and the disk
+# ceiling did not allow a second cold install). The first live run of
+# this workflow happens on the next push to main — recorded, not
+# asserted in advance.
+
+name: battery
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: battery-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  battery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - name: Checkout (full history — the architecture gate's git fallbacks stay resolvable)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Node (repo .nvmrc: 24)"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: pnpm (repo-pinned 10.33.2 via corepack)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.2 --activate
+          pnpm --version
+
+      - name: Install (frozen lockfile; hoisted linker from the committed .npmrc)
+        run: pnpm install --frozen-lockfile
+
+      # §1 — services harness suites (12 files)
+      - name: "§1 Services harness suites (12 files)"
+        run: pnpm exec vitest run
+          packages/services/test/commerce-harness.contract.test.ts
+          packages/services/test/commerce-harness-money.contract.test.ts
+          packages/services/test/commerce-harness-federation.contract.test.ts
+          packages/services/test/commerce-harness-lifecycle.contract.test.ts
+          packages/services/test/commerce-harness-benchmark.contract.test.ts
+          packages/services/test/commerce-harness-scenarios.contract.test.ts
+          packages/services/test/group-buy.contract.test.ts
+          packages/services/test/opportunity-store.contract.test.ts
+          packages/services/test/transport-selector.contract.test.ts
+          packages/services/test/browser-transport.contract.test.ts
+          packages/services/test/browser-recovery.contract.test.ts
+          packages/services/test/merchant-execution.contract.test.ts
+
+      # §2 — core-island suites (the contracts build is the test entry prerequisite)
+      - name: "§2 Core-island suites (R5/R6)"
+        run: |
+          cd apps/zcode-cli
+          pnpm --filter @zcode/contracts build
+          pnpm exec vitest run --config vitest.config.ts \
+            packages/core/tests/find-best-offer.contract.test.ts \
+            packages/core/tests/merchant-read.contract.test.ts
+
+      # §3 — UI-renderer suites (R5/R6 + the split module)
+      - name: "§3 UI-renderer suites"
+        run: |
+          cd packages/ui
+          pnpm exec vitest run \
+            test/commerce-harness-renderer.contract.test.ts \
+            test/merchant-read-renderer.contract.test.ts \
+            src/ToolCallBlocks/renderers/commerce-harness-view/contract.test.ts
+
+      # §4 — architecture gate
+      - name: "§4 Architecture gate"
+        run: pnpm run architecture:check
+
+      # §5 — architecture governance tests
+      - name: "§5 Architecture governance tests"
+        run: pnpm run test:architecture
+
+      # §6 — whole-repo lint (0 errors is the gate; warnings are disclosed, not gated)
+      - name: "§6 Whole-repo lint"
+        run: pnpm run lint
+
+      # §7 — typecheck (package build)
+      - name: "§7 Typecheck (tsc -b packages/services)"
+        run: pnpm exec tsc -b packages/services
+
+      # §8 — benchmark artifact byte-reproducibility (clock pinned)
+      - name: "§8 Benchmark artifact — byte-identical"
+        run: |
+          pnpm exec tsx scripts/commerce-harness/run-benchmark.ts \
+            --at 2026-10-30T00:00:00.000Z --out /tmp/bench-ci.json
+          diff /tmp/bench-ci.json docs/benchmark-r7-2026-10-30.json
+
+      # §9 — scenario artifact byte-reproducibility (clock pinned)
+      - name: "§9 Scenario artifact — byte-identical"
+        run: |
+          pnpm exec tsx scripts/commerce-harness/run-scenarios.ts \
+            --at 2026-10-31T00:00:00.000Z --out /tmp/scenarios-ci.json
+          diff /tmp/scenarios-ci.json docs/scenarios-w-2026-10-31.json
+
+      - name: Battery summary
+        if: always()
+        run: |
+          echo "battery steps completed (§1–§9) — any failure above failed the job"
+          echo "fixture ceiling unchanged — issue #23 law"
