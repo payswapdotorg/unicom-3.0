@@ -63,6 +63,19 @@ jobs:
       - name: Install (frozen lockfile; hoisted linker from the committed .npmrc)
         run: pnpm install --frozen-lockfile
 
+      # The pacman (.pkg.tar.zst) target: electron-builder's bundled fpm shells out
+      # to `bsdtar` for the pacman .MTREE, and ubuntu-latest does NOT carry it
+      # (libarchive-tools is absent). First live run proved this: run 41292068411,
+      # Linux job 124805165960 — deb/AppImage/rpm all green, pacman failed at
+      # `/bin/bash -c "LANG=C bsdtar -czf .MTREE ..."` with exit 127
+      # (command-not-found). Documented prerequisite: libarchive-tools.
+      - name: "Linux packaging prereqs (libarchive-tools — bsdtar for the pacman target)"
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libarchive-tools
+          command -v bsdtar && bsdtar --version
+
       - name: "Bundle the desktop app (${{ matrix.target-os }} ${{ matrix.arch }} — the repo's own packaging path)"
         run: pnpm --filter @zcode/desktop run bundle -- ${{ matrix.target-os }} ${{ matrix.arch }}
 

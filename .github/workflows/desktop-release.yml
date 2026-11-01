@@ -122,6 +122,14 @@ jobs:
           corepack enable
           corepack prepare pnpm@10.33.2 --activate
       - run: pnpm install --frozen-lockfile
+      # The pacman target needs bsdtar (libarchive-tools) on ubuntu-latest —
+      # proven absent by the first live snapshot run (41292068411, job
+      # 124805165960: fpm's `LANG=C bsdtar -czf .MTREE ...` -> exit 127).
+      - name: "Linux packaging prereqs (libarchive-tools — bsdtar for the pacman target)"
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libarchive-tools
       - name: "Bundle (${{ matrix.target-os }} ${{ matrix.arch }})"
         run: pnpm --filter @zcode/desktop run bundle -- ${{ matrix.target-os }} ${{ matrix.arch }}
       - name: "SHA256SUMS + release manifest fragment"
